@@ -1,0 +1,118 @@
+<?xml version="1.0" encoding="UTF-8" standalone="yes" ?>
+<CodeBlocks_project_file>
+	<FileVersion major="1" minor="6" />
+	<Project>
+		<Option title="Spellbyte" />
+		<Option pch_mode="2" />
+		<Option compiler="gcc" />
+		<Build>
+			<Target title="Debug">
+				<Option output="../temp/Debug/bin/Spellbyte" prefix_auto="1" extension_auto="1" />
+				<Option working_dir="../../Spellbyte" />
+				<Option object_output="../temp/Debug/obj" />
+				<Option type="1" />
+				<Option compiler="gcc" />
+				<Compiler>
+					<Add option="-g" />
+					<Add option="-D_DEBUG" />
+				</Compiler>
+				<Linker>
+					<Add library="libCEGUIOgreRenderer-0_d" />
+					<Add library="libCEGUIBase-0_d" />
+					<Add library="OgreMain_d" />
+					<Add library="OIS_d" />
+					<Add library="libboost_date_time-mgw47-mt-d-1_51" />
+					<Add library="libboost_thread-mgw47-mt-d-1_51" />
+					<Add library="libboost_system-mgw47-mt-d-1_51" />
+					<Add library="libboost_chrono-mgw47-mt-d-1_51" />
+					<Add directory="../lib/ogre/debug" />
+					<Add directory="../lib/cegui/debug" />
+					<Add directory="../boost/lib" />
+				</Linker>
+			</Target>
+			<Target title="Release">
+				<Option output="../game/Spellbyte" prefix_auto="1" extension_auto="1" />
+				<Option working_dir="../game" />
+				<Option object_output="../temp/Release" />
+				<Option type="0" />
+				<Option compiler="gcc" />
+				<Compiler>
+					<Add option="-O2" />
+				</Compiler>
+				<Linker>
+					<Add option="-s" />
+				</Linker>
+			</Target>
+		</Build>
+		<Compiler>
+			<Add option="-Wall" />
+			<Add directory="../include" />
+			<Add directory="../include/OGRE" />
+			<Add directory="../../Spellbyte/boost" />
+			<Add directory="../include/OIS" />
+		</Compiler>
+		<Unit filename="Spellbyte/Actor.cpp" />
+		<Unit filename="Spellbyte/Actor.h" />
+		<Unit filename="Spellbyte/ActorFactory.cpp" />
+		<Unit filename="Spellbyte/ActorFactory.h" />
+		<Unit filename="Spellbyte/ActorManager.cpp" />
+		<Unit filename="Spellbyte/ActorManager.h" />
+		<Unit filename="Spellbyte/Application.cpp" />
+		<Unit filename="Spellbyte/Application.h" />
+		<Unit filename="Spellbyte/BaseState.h" />
+		<Unit filename="Spellbyte/ControlManager.cpp" />
+		<Unit filename="Spellbyte/ControlManager.h" />
+		<Unit filename="Spellbyte/Cube.cpp" />
+		<Unit filename="Spellbyte/Cube.h" />
+		<Unit filename="Spellbyte/Generators.cpp" />
+		<Unit filename="Spellbyte/Generators.h" />
+		<Unit filename="Spellbyte/SpellByte.h" />
+		<Unit filename="Spellbyte/StateListener.h" />
+		<Unit filename="Spellbyte/StateManager.cpp" />
+		<Unit filename="Spellbyte/StateManager.h" />
+		<Unit filename="Spellbyte/error_defines.h" />
+		<Unit filename="Spellbyte/main.cpp" />
+		<Unit filename="Spellbyte/resources/CubeResourceFile.cpp" />
+		<Unit filename="Spellbyte/resources/CubeResourceFile.h" />
+		<Unit filename="Spellbyte/resources/CubeResourceFileManager.cpp" />
+		<Unit filename="Spellbyte/resources/CubeResourceFileManager.h" />
+		<Unit filename="Spellbyte/resources/ManualLoaders.h" />
+		<Unit filename="Spellbyte/resources/XMLResource.cpp" />
+		<Unit filename="Spellbyte/resources/XMLResource.h" />
+		<Unit filename="Spellbyte/resources/XMLResourceManager.cpp" />
+		<Unit filename="Spellbyte/resources/XMLResourceManager.h" />
+		<Unit filename="Spellbyte/resources/file_defines.h" />
+		<Unit filename="Spellbyte/states/BaseMenuState.h" />
+		<Unit filename="Spellbyte/states/GameState.cpp" />
+		<Unit filename="Spellbyte/states/GameState.h" />
+		<Unit filename="Spellbyte/states/LoadState.cpp" />
+		<Unit filename="Spellbyte/states/LoadState.h" />
+		<Unit filename="Spellbyte/states/MenuState.cpp" />
+		<Unit filename="Spellbyte/states/MenuState.h" />
+		<Unit filename="Spellbyte/states/OptionsState.cpp" />
+		<Unit filename="Spellbyte/states/OptionsState.h" />
+		<Unit filename="Spellbyte/states/PauseState.cpp" />
+		<Unit filename="Spellbyte/states/PauseState.h" />
+		<Unit filename="Spellbyte/states/PlayMenuState.cpp" />
+		<Unit filename="Spellbyte/states/PlayMenuState.h" />
+		<Unit filename="Spellbyte/states/SplashState.cpp" />
+		<Unit filename="Spellbyte/states/SplashState.h" />
+		<Unit filename="Spellbyte/stdafx.h" />
+		<Unit filename="Spellbyte/utilities/MessageDispatcher.cpp" />
+		<Unit filename="Spellbyte/utilities/MessageDispatcher.h" />
+		<Unit filename="Spellbyte/utilities/easyzlib.c">
+			<Option compilerVar="CC" />
+		</Unit>
+		<Unit filename="Spellbyte/utilities/easyzlib.h" />
+		<Unit filename="Spellbyte/utilities/telegram.h" />
+		<Unit filename="Spellbyte/utilities/tinyxml2.cpp" />
+		<Unit filename="Spellbyte/utilities/tinyxml2.h" />
+		<Unit filename="Spellbyte/utilities/utils.h" />
+		<Extensions>
+			<code_completion />
+			<envvars />
+			<debugger />
+			<lib_finder disable_auto="1" />
+		</Extensions>
+	</Project>
+</CodeBlocks_project_file>
