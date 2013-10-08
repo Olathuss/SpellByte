@@ -19,6 +19,7 @@
 				<Linker>
 					<Add library="libCEGUIOgreRenderer-0_d" />
 					<Add library="libCEGUIBase-0_d" />
+					<Add library="OgreTerrain_d" />
 					<Add library="OgreMain_d" />
 					<Add library="OIS_d" />
 					<Add library="libboost_date_time-mgw47-mt-d-1_51" />
@@ -60,16 +61,23 @@
 		<Unit filename="Spellbyte/Application.cpp" />
 		<Unit filename="Spellbyte/Application.h" />
 		<Unit filename="Spellbyte/BaseState.h" />
+		<Unit filename="Spellbyte/CollisionTools.cpp" />
+		<Unit filename="Spellbyte/CollisionTools.h" />
 		<Unit filename="Spellbyte/ControlManager.cpp" />
 		<Unit filename="Spellbyte/ControlManager.h" />
-		<Unit filename="Spellbyte/Cube.cpp" />
-		<Unit filename="Spellbyte/Cube.h" />
+		<Unit filename="Spellbyte/DotSceneLoader.cpp" />
+		<Unit filename="Spellbyte/DotSceneLoader.h" />
 		<Unit filename="Spellbyte/Generators.cpp" />
 		<Unit filename="Spellbyte/Generators.h" />
+		<Unit filename="Spellbyte/OgreTerrainFix.h" />
+		<Unit filename="Spellbyte/Player.cpp" />
+		<Unit filename="Spellbyte/Player.h" />
 		<Unit filename="Spellbyte/SpellByte.h" />
 		<Unit filename="Spellbyte/StateListener.h" />
 		<Unit filename="Spellbyte/StateManager.cpp" />
 		<Unit filename="Spellbyte/StateManager.h" />
+		<Unit filename="Spellbyte/World.cpp" />
+		<Unit filename="Spellbyte/World.h" />
 		<Unit filename="Spellbyte/error_defines.h" />
 		<Unit filename="Spellbyte/main.cpp" />
 		<Unit filename="Spellbyte/resources/CubeResourceFile.cpp" />
