@@ -29,7 +29,7 @@
         APP->Log->logMessage("MenuState: enter");
 
         // Create scene manager derived from ogre root, this is a ST_GENERIC type with name "MenuSceneMgr"
-        SceneMgr = APP->OgreRoot->createSceneManager(Ogre::ST_GENERIC, "MenuSceneMgr");
+        SceneMgr = APP->SceneMgr;//APP->OgreRoot->createSceneManager(Ogre::ST_GENERIC, "MenuSceneMgr");
 
         // Set light for menu scene, not sure if this is necessary or if the values are correct
         // but here more as placement
@@ -105,8 +105,7 @@
         SceneMgr->destroyCamera(Camera);
 
         // Destroy scene manager
-        if(SceneMgr)
-            APP->OgreRoot->destroySceneManager(SceneMgr);
+        SceneMgr = 0;
     }
 
     void MenuState::handleEvents()
@@ -137,7 +136,7 @@
 
         if(buttonName == getButtonID(PLAY_GAME))
         {
-            pushState(findByName("PlayMenuState"));
+            changeState(findByName("GameState"));
             return true;
         }
         else if(buttonName == getButtonID(OPTIONS))
@@ -156,7 +155,7 @@
     const std::string MenuState::getButtonID(int id) const
     {
         // Different button IDs
-        std::string buttonID[BTN_END] = { "EnterBtn", "OptionsBtn", "ScoresBtn", "AchieveBtn", "CreditsBtn", "ExitBtn" };
+        std::string buttonID[BTN_END] = { "EnterBtn", "OptionsBtn", "CreditsBtn", "ExitBtn" };
         return buttonID[id];
     }
 
