@@ -40,13 +40,12 @@ void XMLResource::loadImpl()
 
     dataSize = fileVector.size();
 
-    char* xml = new char[dataSize + 1];
+    char* xml = new char[dataSize];
     memcpy(xml, &fileVector[0], dataSize);
-    xml[dataSize + 1] = '\0';
 
-    xmlFile.Parse( xml, dataSize + 1 );
+    xmlFile.Parse( xml, dataSize );
 
-    delete xml;
+    delete[] xml;
 }
 
 void XMLResource::unloadImpl()
