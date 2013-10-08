@@ -17,7 +17,7 @@ namespace SpellByte
     {
     private:
         // Use map to relate actor ID with its pointer
-        typedef std::map<int, ActorPtr> ActorMapType;
+        typedef std::map<int, Actor*> ActorMapType;
 
     private:
         // Map container with ID and ActorPtr
@@ -31,13 +31,13 @@ namespace SpellByte
 
         // this method stores a pointer to the Actor
         // in the std::vector at the index position indicated
-        void registerActor(ActorPtr newActor);
+        void registerActor(Actor *newActor);
 
         // returns pointer to the Actor with the ID given as a parameter
-        ActorPtr getActorFromID(int id) const;
+        Actor *getActorFromID(int id) const;
 
         // this method removes the Actor from the list
-        void removeActor(ActorPtr Actor);
+        void removeActor(Actor *newActor);
 
         // clears all entities from the Actor map
         void reset()

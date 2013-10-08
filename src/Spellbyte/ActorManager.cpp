@@ -1,5 +1,6 @@
 #include "ActorManager.h"
 #include "Actor.h"
+#include "define.h"
 
 namespace SpellByte
 {
@@ -10,7 +11,7 @@ namespace SpellByte
         this->reset();
     }
 
-    ActorPtr ActorManager::getActorFromID(int id) const
+    Actor *ActorManager::getActorFromID(int id) const
     {
         // find the Actor
         ActorMapType::const_iterator ent = ActorMap.find(id);
@@ -21,13 +22,16 @@ namespace SpellByte
         return ent->second;
     }
 
-    void ActorManager::removeActor(ActorPtr removeActor)
+    void ActorManager::removeActor(Actor *removeActor)
     {
         ActorMap.erase(ActorMap.find(removeActor->getID()));
     }
 
-    void ActorManager::registerActor(ActorPtr newActor)
+    void ActorManager::registerActor(Actor *newActor)
     {
+        LOG("Registering actor with id: " + Ogre::StringConverter::toString(newActor->getID()));
+        //std::pair<int, ActorPtr> actorPair(newActor->getID(), newActor);
         ActorMap.insert(std::make_pair(newActor->getID(), newActor));
+        //ActorMap[newActor->getID()]
     }
 }

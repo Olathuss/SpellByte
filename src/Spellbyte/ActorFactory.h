@@ -1,8 +1,11 @@
 #ifndef _ACTOR_FACTORY_H_
 #define _ACTOR_FACTORY_H_
 
+#include <Terrain/OgreTerrainGroup.h>
+
 #include "Actor.h"
 #include "utilities/tinyxml2.h"
+#include "DotSceneLoader.h"
 
 namespace SpellByte
 {
@@ -14,11 +17,15 @@ namespace SpellByte
 
     public:
         ActorFactory(void);
+        ~ActorFactory();
 
-        ActorPtr createActor(long slice, long row, long col, tinyxml2::XMLNode *xmlRoot);
+        Actor *createActor(Ogre::SceneManager *SceneMgr, Ogre::TerrainGroup *tGrp, tinyxml2::XMLElement* xmlRoot);
 
     protected:
         //virtual ComponentPtr createComponent(tinyxml2::XMLNode *xmlElement);
+        bool loadPosition(tinyxml2::XMLElement *elt, float &x, float &y, float &z);
+
+        Ogre::DotSceneLoader *dsl;
 
     private:
         ActorID getNextActorID(void) { ++lastActorID; return lastActorID; };

@@ -59,6 +59,8 @@ namespace SpellByte
 
         // all components for Actor
         ActorComponents components;
+        // Special case component
+        Ogre::SceneNode *actorSceneNode;
 
         // Mark Actor has active or inactive
         bool active;
