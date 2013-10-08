@@ -14,7 +14,7 @@ namespace SpellByte
     void MessageDispatcher::DispatchMsg(double delay, int sender, int receiver, int msg, void *additionalInfo = NULL)
     {
         // ActorMgr not yet implemented
-        ActorPtr pReceiver = ActorMgr->getActorFromID(receiver);
+        /*ActorPtr pReceiver = ActorMgr->getActorFromID(receiver);
 
         // ensure receiver is valid target
         if(pReceiver.isNull())
@@ -44,13 +44,13 @@ namespace SpellByte
             PriorityQ.insert(telegram);
 
             LOG("Delayed telegram");
-        }
+        }*/
     }
 
     void MessageDispatcher::DispatchDelayedMessages()
     {
         // first get current time
-        double CurrentTime = APP->getCurrentFrame();
+        /*double CurrentTime = APP->getCurrentFrame();
 
         // now dispatch any telegrams that need to be dispatched
         while(!PriorityQ.empty() &&
@@ -70,6 +70,6 @@ namespace SpellByte
 
             // remove from queue
             PriorityQ.erase(PriorityQ.begin());
-        }
+        }*/
     }
 }
