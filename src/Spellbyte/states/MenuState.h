@@ -23,8 +23,6 @@ namespace SpellByte
         enum {
             PLAY_GAME = 0,
             OPTIONS,
-            SCORES,
-            ACHIEVEMENTS,
             CREDITS,
             EXIT,
             BTN_END
