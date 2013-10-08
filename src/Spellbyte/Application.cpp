@@ -45,13 +45,23 @@ namespace SpellByte
          * from which they are created
          */
 
+         Log->logMessage("Application: Shutting Down...");
+
         ceguiContext = NULL;
         ceguiRenderer = NULL;
+        enabledCollision = true;
 
         if(GameStateManager)
+        {
             delete GameStateManager;
+            GameStateManager = 0;
+        }
 
-        Log->logMessage("Application: Shutting Down...");
+        if(SceneMgr)
+        {
+            OgreRoot->destroySceneManager(SceneMgr);
+            SceneMgr = 0;
+        }
 
         if(Timer)
         {
@@ -64,13 +74,13 @@ namespace SpellByte
 
         if(xmlManager)
         {
-            delete Ogre::ResourceGroupManager::getSingleton()._getResourceManager("Cube27ResourceFile");
+            delete Ogre::ResourceGroupManager::getSingleton()._getResourceManager("XMLResource");
             xmlManager = 0;
         }
 
         if(c27Manager)
         {
-            delete Ogre::ResourceGroupManager::getSingleton()._getResourceManager("XMLResource");
+            delete Ogre::ResourceGroupManager::getSingleton()._getResourceManager("Cube27ResourceFile");
             c27Manager = 0;
         }
 
@@ -115,9 +125,13 @@ namespace SpellByte
     void Application::execute()
     {
         // Initialize Ogre3D
-        if(!initOgre("Cube27", 0, 0))
+        if(!initOgre("SpellByte", 0, 0))
             return;
 
+        SceneMgr = OgreRoot->createSceneManager(Ogre::ST_GENERIC, "SpellByteSceneMgr");
+
+        loadConfig();
+        language = getConfigString("language");
         // Initialize our strings
         loadStrings(language);
 
@@ -149,7 +163,7 @@ namespace SpellByte
         GameState::create(GameStateManager, "GameState");
         PlayMenuState::create(GameStateManager, "PlayMenuState");
 
-        GameStateManager->changeState(GameStateManager->findByName("MenuState"));
+        GameStateManager->changeState(GameStateManager->findByName("GameState"));
 
         OgreRoot->addFrameListener(this);
         OgreRoot->startRendering();
@@ -163,7 +177,9 @@ namespace SpellByte
     bool Application::loadStrings(std::string language)
     {
         std::string languageFile = language + ".xml";
-        XMLResourcePtr xmlFile = xmlManager->load(languageFile,"General");
+        XMLResourcePtr xmlFile = xmlManager->load(languageFile,"Language");
+
+        std::cout << "getXML" << std::endl;
         tinyxml2::XMLDocument *langDoc = xmlFile->getXML();
         if(!langDoc)
         {
@@ -184,6 +200,40 @@ namespace SpellByte
         return true;
     }
 
+    bool Application::loadConfig()
+    {
+        std::string configFile = "spellbyte.xml";
+        XMLResourcePtr xmlFile = xmlManager->load(configFile,"General");
+        tinyxml2::XMLDocument *configDoc = xmlFile->getXML();
+        if(!configDoc)
+        {
+            Ogre::String desc = "Error, config file missing";
+            throw(Ogre::Exception(20, desc, "Application"));
+        }
+
+        for(tinyxml2::XMLElement *element = configDoc->FirstChildElement("config")->FirstChildElement("strings")->FirstChildElement(); element; element = element->NextSiblingElement())
+        {
+            const char *key=element->Attribute("id");
+            const char *text=element->Attribute("value");
+            if(key && text)
+            {
+                configStrings[key] = text;
+            }
+        }
+
+        for(tinyxml2::XMLElement *element = configDoc->FirstChildElement("config")->FirstChildElement("floats")->FirstChildElement(); element; element = element->NextSiblingElement())
+        {
+            const char *key=element->Attribute("id");
+            float value=element->FloatAttribute("value");
+            if(key)
+            {
+                configFloats[key] = value;
+            }
+        }
+
+        return true;
+    }
+
     const std::string Application::getString(std::string ID) const
     {
         std::map<std::string, std::string>::const_iterator it;
@@ -191,6 +241,32 @@ namespace SpellByte
         if(it == textResource.end())
         {
             Ogre::String desc = "Error finding string " + ID;
+            throw(Ogre::Exception(20, desc, "Application"));
+        }
+
+        return it->second;
+    }
+
+    const std::string Application::getConfigString(std::string ID) const
+    {
+        std::map<std::string, std::string>::const_iterator it;
+        it = configStrings.find(ID);
+        if(it == configStrings.end())
+        {
+            Ogre::String desc = "Error finding config " + ID;
+            throw(Ogre::Exception(20, desc, "Application"));
+        }
+
+        return it->second;
+    }
+
+    const float Application::getConfigFloat(std::string ID) const
+    {
+        std::map<std::string, float>::const_iterator it;
+        it = configFloats.find(ID);
+        if(it == configFloats.end())
+        {
+            Ogre::String desc = "Error finding config " + ID;
             throw(Ogre::Exception(20, desc, "Application"));
         }
 
@@ -219,7 +295,11 @@ namespace SpellByte
             OgreRoot = new Ogre::Root("plugins.cfg");
         #endif
 
-        OgreRoot->restoreConfig();
+        //OgreRoot->restoreConfig();
+        if(!OgreRoot->showConfigDialog())
+        {
+            return false;
+        }
 
         c27Manager = new Cube27ResFileManager();
         xmlManager = new XMLResourceManager();
@@ -302,15 +382,62 @@ namespace SpellByte
         //CEGUI::InjectedInputReceiver::injectKeyDown(keyEventRef.key);
         //CEGUI::InjectedInputReceiver::injectChar(keyEventRef.text);
 
+        UserEvent *tmp = NULL;
         if(Keyboard->isKeyDown(OIS::KC_SYSRQ))
         {
-            RenderWindow->writeContentsToTimestampedFile("Cube27_Screenshot_", ".jpg");
+            RenderWindow->writeContentsToTimestampedFile("SpellByte_Screenshot_", ".jpg");
             return true;
         }
-
-        if(keyEventRef.key == OIS::KC_ESCAPE)
+        else if(keyEventRef.key == OIS::KC_MINUS)
         {
-            UserEvent *tmp = new UserEvent(UserEvent::ESCAPE);
+            tmp = new UserEvent(UserEvent::AMBIENT_LIGHT_DOWN_ON);
+        }
+        else if(keyEventRef.key == OIS::KC_EQUALS)
+        {
+            tmp = new UserEvent(UserEvent::AMBIENT_LIGHT_UP_ON);
+        }
+        else if(keyEventRef.key == OIS::KC_PGUP)
+        {
+            tmp = new UserEvent(UserEvent::DIR_LIGHT_UP_ON);
+        }
+        else if(keyEventRef.key == OIS::KC_PGDOWN)
+        {
+            tmp = new UserEvent(UserEvent::DIR_LIGHT_DOWN_ON);
+        }
+        else if(keyEventRef.key == OIS::KC_C)
+        {
+            enabledCollision = (enabledCollision == true ? false : true);
+        }
+        else if(keyEventRef.key == OIS::KC_ESCAPE)
+        {
+            tmp = new UserEvent(UserEvent::ESCAPE);
+        }
+        else if(keyEventRef.key == OIS::KC_W)
+        {
+            tmp = new UserEvent(UserEvent::PLAYER_FORWARD_ON);
+        }
+        else if(keyEventRef.key == OIS::KC_S)
+        {
+            tmp = new UserEvent(UserEvent::PLAYER_BACKWARD_ON);
+        }
+        else if(keyEventRef.key == OIS::KC_A)
+        {
+            tmp = new UserEvent(UserEvent::PLAYER_LEFT_ON);
+        }
+        else if(keyEventRef.key == OIS::KC_D)
+        {
+            tmp = new UserEvent(UserEvent::PLAYER_RIGHT_ON);
+        }
+        else if(keyEventRef.key == OIS::KC_Q)
+        {
+            tmp = new UserEvent(UserEvent::PLAYER_UP_ON);
+        }
+        else if(keyEventRef.key == OIS::KC_E)
+        {
+            tmp = new UserEvent(UserEvent::PLAYER_DOWN_ON);
+        }
+        if(tmp != NULL)
+        {
             CONTROL->addEvent(tmp);
         }
 
@@ -320,6 +447,51 @@ namespace SpellByte
     bool Application::keyReleased(const OIS::KeyEvent &keyEventRef)
     {
         //CEGUI::InjectedInputReceiver::injectKeyUp(keyEventRef.key);
+        UserEvent *tmp = NULL;
+        if(keyEventRef.key == OIS::KC_MINUS)
+        {
+            tmp = new UserEvent(UserEvent::AMBIENT_LIGHT_DOWN_OFF);
+        }
+        else if(keyEventRef.key == OIS::KC_EQUALS)
+        {
+            tmp = new UserEvent(UserEvent::AMBIENT_LIGHT_UP_OFF);
+        }
+        else if(keyEventRef.key == OIS::KC_PGUP)
+        {
+            tmp = new UserEvent(UserEvent::DIR_LIGHT_UP_OFF);
+        }
+        else if(keyEventRef.key == OIS::KC_PGDOWN)
+        {
+            tmp = new UserEvent(UserEvent::DIR_LIGHT_DOWN_OFF);
+        }
+        else if(keyEventRef.key == OIS::KC_W)
+        {
+            tmp = new UserEvent(UserEvent::PLAYER_FORWARD_OFF);
+        }
+        else if(keyEventRef.key == OIS::KC_S)
+        {
+            tmp = new UserEvent(UserEvent::PLAYER_BACKWARD_OFF);
+        }
+        else if(keyEventRef.key == OIS::KC_A)
+        {
+            tmp = new UserEvent(UserEvent::PLAYER_LEFT_OFF);
+        }
+        else if(keyEventRef.key == OIS::KC_D)
+        {
+            tmp = new UserEvent(UserEvent::PLAYER_RIGHT_OFF);
+        }
+        else if(keyEventRef.key == OIS::KC_Q)
+        {
+            tmp = new UserEvent(UserEvent::PLAYER_UP_OFF);
+        }
+        else if(keyEventRef.key == OIS::KC_E)
+        {
+            tmp = new UserEvent(UserEvent::PLAYER_DOWN_OFF);
+        }
+        if(tmp != NULL)
+        {
+            CONTROL->addEvent(tmp);
+        }
         return true;
     }
 

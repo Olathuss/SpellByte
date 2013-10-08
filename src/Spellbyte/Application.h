@@ -32,10 +32,17 @@ namespace SpellByte
         virtual bool mousePressed( const OIS::MouseEvent &evt, OIS::MouseButtonID id );
         virtual bool mouseReleased( const OIS::MouseEvent &evt, OIS::MouseButtonID id );
 
-        // Used to load strings for On Screen Text
-        virtual bool loadStrings(Ogre::String language);
         // Get text resource for on screen text
         const std::string getString(std::string ID) const;
+        // Get config string setting
+        const std::string getConfigString(std::string ID) const;
+        // Get config float setting
+        const float getConfigFloat(std::string ID) const;
+
+        bool collisionEnabled()
+        {
+            return enabledCollision;
+        }
 
         // Get current resolution in string form
         const Ogre::String getResolution() const
@@ -59,8 +66,7 @@ namespace SpellByte
         OIS::Keyboard                  *Keyboard;
         OIS::Mouse                     *Mouse;
 
-        // Pointer to current SceneManager, do not delete
-        // Creator of SceneMgr should delete
+        // Single Ogre::SceneManager
         Ogre::SceneManager *SceneMgr;
 
         // Resource related
@@ -91,6 +97,10 @@ namespace SpellByte
         // Initialize Ogre
         virtual bool initOgre(Ogre::String wndTitle, OIS::KeyListener *pKeyListener = 0, OIS::MouseListener *pMouseListener = 0);
 
+        // Used to load strings for On Screen Text
+        virtual bool loadStrings(Ogre::String language);
+        virtual bool loadConfig();
+
         // Check storage space
         //virtual bool checkStorage(long diskSpaceNeeded);
 
@@ -102,8 +112,11 @@ namespace SpellByte
 
         // Current language being used throughout application
         std::string language;
+        std::map<std::string, std::string> configStrings;
+        std::map<std::string, float> configFloats;
         std::string currentDifficulty;
         std::map<std::string, std::string> textResource;
+        bool enabledCollision;
     };
 }
 
