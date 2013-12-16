@@ -19,11 +19,13 @@ namespace SpellByte
         ActorFactory(void);
         ~ActorFactory();
 
-        Actor *createActor(Ogre::SceneManager *SceneMgr, Ogre::TerrainGroup *tGrp, tinyxml2::XMLElement* xmlRoot);
+        Actor *createActor(Ogre::SceneManager *SceneMgr, Ogre::SceneNode *parentNode, Ogre::TerrainGroup *tGrp, tinyxml2::XMLElement* xmlRoot);
 
     protected:
         //virtual ComponentPtr createComponent(tinyxml2::XMLNode *xmlElement);
         bool loadPosition(tinyxml2::XMLElement *elt, float &x, float &y, float &z);
+        bool loadScale(tinyxml2::XMLElement *elt, float &x, float &y, float &z);
+        bool loadRotate(tinyxml2::XMLElement *elt, float &roll, float &pitch, float &yaw);
 
         Ogre::DotSceneLoader *dsl;
 

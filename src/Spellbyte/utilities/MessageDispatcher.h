@@ -58,7 +58,6 @@ namespace SpellByte
         // send out any delayed messages.  Called once each time through main loop
         void DispatchDelayedMessages();
     };
-
 }
 
 #endif // MESSAGE_DISPATCHER_H

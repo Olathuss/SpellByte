@@ -11,6 +11,11 @@ namespace SpellByte
         setID(id);
     }
 
+    Actor::Actor()
+    {
+        setID(nextValidID);
+    }
+
     void Actor::setID(int val)
     {
         assert((val >= nextValidID) && "<Actor::setID>: invalid ID");

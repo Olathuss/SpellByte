@@ -3,6 +3,7 @@
 
 #include <map>
 #include "stdafx.h"
+#include "Object.h"
 // Define unique ID for component type
 
 namespace SpellByte
@@ -13,38 +14,6 @@ namespace SpellByte
     // each component has a type, each Actor
     // should only have one of any component type
     typedef int componentType;
-
-    class BaseComponent
-    {
-    protected:
-        ActorPtr *owner;
-    public:
-        BaseComponent(ActorPtr *owningActor):owner(owningActor)
-        {
-            // empty
-        }
-
-        virtual ~BaseComponent()
-        {
-            // Do not delete owner, just lose reference to it
-            // Manager should delete the object
-            if(owner)
-                owner = 0;
-        }
-
-        virtual void update()=0;
-
-        virtual void handleMessage(const Telegram &msg)=0;
-    };
-
-    // Smart pointer for component
-    class ComponentPtr : public Ogre::SharedPtr<BaseComponent>
-    {
-    public:
-        ComponentPtr() : Ogre::SharedPtr<BaseComponent>() {}
-        explicit ComponentPtr(BaseComponent *rep) : Ogre::SharedPtr<BaseComponent>(rep) {}
-        ComponentPtr(const ComponentPtr &r) : Ogre::SharedPtr<BaseComponent>(r) {}
-    };
 
     class Actor
     {
@@ -61,6 +30,7 @@ namespace SpellByte
         ActorComponents components;
         // Special case component
         Ogre::SceneNode *actorSceneNode;
+        Ogre::Entity *actorEntity;
 
         // Mark Actor has active or inactive
         bool active;
@@ -74,6 +44,7 @@ namespace SpellByte
 
     public:
         Actor(ActorID id);
+        Actor();
 
         ~Actor(){}
 

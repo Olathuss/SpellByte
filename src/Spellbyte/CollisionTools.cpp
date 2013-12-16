@@ -23,6 +23,7 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
 THE SOFTWARE.
 ******************************************************************************************/
 #include "CollisionTools.h"
+#include "Object.h"
 #include <OgreSubMesh.h>
 #include <iostream>
 
@@ -99,6 +100,7 @@ bool CollisionTools::collidesWithEntity(const Vector3& fromPoint, const Vector3&
 	if (raycastFromPoint(fromPointAdj, normal, myResult, (ulong&)myObject, distToColl, queryMask))
 	{
 		distToColl -= collisionRadius;
+		//std::cout << "distToColl: " << distToColl << std::endl;
 		return (distToColl <= distToDest);
 	}
 	else
@@ -231,6 +233,8 @@ bool CollisionTools::raycast(const Ray &ray, Vector3 &result,ulong &target,float
     //Ogre::Real closest_distance = -1.0f;
 	closest_distance = -1.0f;
     Ogre::Vector3 closest_result;
+    //Ogre::Vector3 *vertices;
+    //unsigned long *indices;
     Ogre::RaySceneQueryResult &query_result = mRaySceneQuery->getLastResults();
     for (size_t qr_idx = 0; qr_idx < query_result.size(); qr_idx++)
     {
@@ -248,6 +252,9 @@ bool CollisionTools::raycast(const Ray &ray, Vector3 &result,ulong &target,float
         {
             // get the entity to check
 			Ogre::Entity *pentity = static_cast<Ogre::Entity*>(query_result[qr_idx].movable);
+			//Ogre::Any any = pentity->getParentSceneNode()->getUserAny();
+			///SpellByte::Object *obj = any_cast<SpellByte::Object*>(any);
+			//std::cout << "Name: " + obj->getName();
 
             // mesh data to retrieve
             size_t vertex_count;
@@ -286,7 +293,7 @@ bool CollisionTools::raycast(const Ray &ray, Vector3 &result,ulong &target,float
             delete[] vertices;
             delete[] indices;
 
-            // if we found a new closest raycast for this object, update the
+            // if we found a new closest raycast for this o bject, update the
             // closest_result before moving on to the next object.
             if (new_closest_found)
             {
@@ -295,6 +302,9 @@ bool CollisionTools::raycast(const Ray &ray, Vector3 &result,ulong &target,float
             }
         }
     }
+    // free the verticies and indicies memory
+    //delete vertices;
+    //delete indices;
 
     // return the result
     if (closest_distance >= 0.0f)

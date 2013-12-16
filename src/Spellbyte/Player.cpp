@@ -1,14 +1,20 @@
+#include <cctype>
 #include "Player.h"
+#include "console/console_communicator.h"
+#include "SLB.hpp"
+#include "console/LuaManager.h"
+#include "World.h"
 
 namespace SpellByte
 {
-    Player::Player()
+    Player::Player() : Subscriber()
     {
         translateVector = Ogre::Vector3::ZERO;
         PlayerAction = 0;
         moveScale = 0.0f;
         playerHeight = APP->getConfigFloat("height");
         moveSpeed = APP->getConfigFloat("speed");
+        COMM->registerSubscriber("player", this);
     }
 
     Player::~Player()
@@ -16,9 +22,20 @@ namespace SpellByte
 
     }
 
-    bool Player::init(Ogre::SceneManager *sceneManager, Ogre::Camera *Camera)
+    void Player::bindToLUA()
+    {
+        SLB::Class<Player>("SpellByte::Player")
+            .constructor()
+            .property("speed", &Player::moveSpeed)
+            .property("height", &Player::playerHeight);
+
+        SLB::setGlobal<Player*>(&(*LUAMANAGER->LUA), this, "player");
+    }
+
+    bool Player::init(Ogre::SceneManager *sceneManager, Ogre::Camera *Camera, World *world)
     {
         sceneMgr = sceneManager;
+        GameWorld = world;
 
         cameraNode = sceneMgr->getRootSceneNode()->createChildSceneNode();
         Camera->setNearClipDistance(0.1);
@@ -30,7 +47,22 @@ namespace SpellByte
 
         cameraRollNode = cameraPitchNode->createChildSceneNode();
         cameraRollNode->attachObject(Camera);
-        cameraNode->setPosition(0, 500, 0);
+        cameraNode->setPosition(Ogre::Vector3::ZERO);
+
+        enabledCollision = true;
+
+        bindToLUA();
+        return true;
+    }
+
+    void Player::detachCamera(Ogre::Camera *camera)
+    {
+        cameraRollNode->detachObject(camera);
+    }
+
+    void Player::attachCamera(Ogre::Camera *camera)
+    {
+        cameraRollNode->attachObject(camera);
     }
 
     Ogre::SceneNode *Player::getCameraNode()
@@ -45,11 +77,67 @@ namespace SpellByte
 
     Ogre::String Player::getDebugString()
     {
-        Ogre::Vector3 xyz = cameraNode->getPosition();
+        Ogre::Vector3 xyz = cameraNode->_getDerivedPosition();
         Ogre::String txt = "X: " + Ogre::StringConverter::toString(xyz.x) +
                         "\nY: " + Ogre::StringConverter::toString(xyz.y) +
                         "\nZ: " + Ogre::StringConverter::toString(xyz.z);
         return txt;
+    }
+
+    std::string Player::handleConsoleCmd(std::queue<std::string> cmdQueue)
+    {
+        std::string returnString;
+        std::string nextCmd = cmdQueue.front();
+        cmdQueue.pop();
+        if(nextCmd == "debug")
+        {
+            return getDebugString();
+        }
+        if(nextCmd == "move")
+        {
+            float x, y, z;
+            Ogre::Vector3 pos = cameraNode->getPosition();
+            x = pos.x;
+            y = pos.y;
+            z = pos.z;
+            returnString = "Player move:";
+            while(!cmdQueue.empty())
+            {
+                std::string next = cmdQueue.front();
+                cmdQueue.pop();
+                if(next == "x")
+                {
+                    std::string value = cmdQueue.front().c_str();
+                    cmdQueue.pop();
+                    x = std::atof(value.c_str());
+                    returnString += "\nset x to " + value;
+                }
+                else if(next == "y")
+                {
+                    std::string value = cmdQueue.front().c_str();
+                    cmdQueue.pop();
+                    y = std::atof(value.c_str());
+                    returnString += "\nset y to " + value;
+                }
+                else if(next == "z")
+                {
+                    std::string value = cmdQueue.front().c_str();
+                    cmdQueue.pop();
+                    z = std::atof(value.c_str());
+                    returnString += "\nset z to " + value;
+                }
+                else
+                {
+                    return "Error, invalid argument; expected: x, y, or z";
+                }
+            }
+            cameraNode->setPosition(x, y, z);
+        }
+        else
+        {
+            return "Player: invalid command";
+        }
+        return returnString;
     }
 
     void Player::setCollisionHanlder(MOC::CollisionTools *ct)
@@ -106,6 +194,15 @@ namespace SpellByte
         case UserEvent::PLAYER_DOWN_OFF:
             disableAction(PLAYER_DOWN);
             break;
+        case UserEvent::PLAYER_RUN_ON:
+            moveSpeed *= 5;
+            break;
+        case UserEvent::PLAYER_RUN_OFF:
+            moveSpeed /= 5;
+            break;
+        case UserEvent::PLAYER_SET_CLIPPING:
+            enabledCollision = (enabledCollision == false) ? true : false;
+            break;
         }
     }
 
@@ -120,11 +217,11 @@ namespace SpellByte
         translateVector = Ogre::Vector3::ZERO;
         if(PlayerAction & PLAYER_UP)
         {
-            cameraNode->setPosition(cameraNode->getPosition() + Ogre::Vector3(0, 5, 0));
+            cameraNode->setPosition(cameraNode->getPosition() + Ogre::Vector3(0, moveScale, 0));
         }
         if(PlayerAction & PLAYER_DOWN)
         {
-            cameraNode->setPosition(cameraNode->getPosition() - Ogre::Vector3(0, 5, 0));
+            cameraNode->setPosition(cameraNode->getPosition() - Ogre::Vector3(0, moveScale, 0));
         }
         if(PlayerAction & PLAYER_FORWARD)
         {
@@ -173,10 +270,14 @@ namespace SpellByte
             }
         }
 
-        if(APP->collisionEnabled())
+        if(enabledCollision)
         {
-            collisionHandler->calculateY(cameraNode,true,true,2.0f,1);
-            if (collisionHandler->collidesWithEntity(oldPos, cameraNode->getPosition(), 5.0f, -1.0f, 1))
+            collisionHandler->calculateY(cameraNode,true,true,1.5f,1);
+            if (collisionHandler->collidesWithEntity(oldPos, cameraNode->getPosition(), 1.5f, -1.0f, -1))
+            {
+                cameraNode->setPosition(oldPos);
+            }
+            else if(cameraNode->getPosition().y - oldPos.y > playerHeight * .4)
             {
                 cameraNode->setPosition(oldPos);
             }

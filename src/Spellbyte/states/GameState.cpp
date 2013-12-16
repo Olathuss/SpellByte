@@ -23,18 +23,22 @@ namespace SpellByte
         Camera->setAspectRatio(Ogre::Real(APP->Viewport->getActualWidth())
                                 / Ogre::Real(APP->Viewport->getActualHeight()));
 
+        Camera->setNearClipDistance(0.1);
+        Camera->setFarClipDistance(100);
         APP->Viewport->setCamera(Camera);
         APP->ceguiContext->getMouseCursor().hide();
 
-        player.init(SceneMgr, Camera);
+        player.init(SceneMgr, Camera, &gameWorld);
 
         //CameraMan = new OgreBites::SdkCameraMan(Camera);
 
-        gameWorld.loadWorld();
+        gameWorld.init(Camera, &player);
+        gameWorld.loadWorld(APP->getConfigString("world"));
         buildGUI();
         createScene();
         mCollisionTools = new MOC::CollisionTools(SceneMgr, gameWorld.terrainGroup);
         player.setCollisionHanlder(mCollisionTools);
+        gameWorld.setCollisionTool(mCollisionTools);
     }
 
     bool GameState::pause()
@@ -79,20 +83,25 @@ namespace SpellByte
         gameWorld.createScene();
 
         CEGUI::WindowManager &wmgr = CEGUI::WindowManager::getSingleton();
-        CEGUI::Window *wRoot = wmgr.createWindow("DefaultWindow", "root");
-        APP->ceguiContext->setRootWindow( wRoot );
+        rootWindow = wmgr.createWindow("DefaultWindow", "root");
+        APP->ceguiContext->setRootWindow( rootWindow );
         debugBox = wmgr.createWindow("TaharezLook/StaticText", "textbox");
-        wRoot->addChild(debugBox);
+        rootWindow->addChild(debugBox);
+        GCW->Init(rootWindow);
     }
 
     void GameState::destroyScene()
     {
         gameWorld.destroyScene();
+
+        rootWindow->destroyChild(debugBox);
+        GCW->Disable();
     }
 
     void GameState::update(const Ogre::FrameEvent &evt)
     {
         player.update(evt);
+        gameWorld.update(evt);
 
         debugBox->setText(player.getDebugString().c_str());
     }
@@ -102,6 +111,29 @@ namespace SpellByte
         while(CONTROL->hasEvent())
         {
             const UserEvent *tmp = CONTROL->getEvent();
+            if(tmp->getType() == UserEvent::TERMINAL)
+            {
+                if(!GCW->isVisible())
+                {
+                    LOG("Console enabled");
+                    APP->ceguiContext->getMouseCursor().show();
+                    GCW->setVisible(true);
+                }
+                else
+                {
+                    LOG("Console disabled");
+                    APP->ceguiContext->getMouseCursor().hide();
+                    GCW->setVisible(false);
+                }
+                continue;
+            }
+            else
+            {
+                if(GCW->isVisible())
+                {
+                    continue;
+                }
+            }
             if(tmp->getType() > UserEvent::PLAYER_ACTION_START && tmp->getType() < UserEvent::PLAYER_ACTION_END)
             {
                 player.handleEvent(tmp->getType());

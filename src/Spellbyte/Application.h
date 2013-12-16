@@ -12,6 +12,7 @@
 
 namespace SpellByte
 {
+    class World;
     class Application : public Ogre::Singleton<Application>, Ogre::FrameListener, OIS::KeyListener, OIS::MouseListener
     {
     public:
@@ -32,12 +33,27 @@ namespace SpellByte
         virtual bool mousePressed( const OIS::MouseEvent &evt, OIS::MouseButtonID id );
         virtual bool mouseReleased( const OIS::MouseEvent &evt, OIS::MouseButtonID id );
 
+        // Set world pointer for objects
+        void attachWorld(World* nWorld)
+        {
+            worldPtr = nWorld;
+        }
+        void detachWorld()
+        {
+            worldPtr = NULL;
+        }
+        World* getWorldPtr()
+        {
+            return worldPtr;
+        }
         // Get text resource for on screen text
         const std::string getString(std::string ID) const;
         // Get config string setting
         const std::string getConfigString(std::string ID) const;
         // Get config float setting
         const float getConfigFloat(std::string ID) const;
+        // To bind App to LUA
+        void bindToLUA();
 
         bool collisionEnabled()
         {
@@ -117,6 +133,7 @@ namespace SpellByte
         std::string currentDifficulty;
         std::map<std::string, std::string> textResource;
         bool enabledCollision;
+        World* worldPtr;
     };
 }
 

@@ -17,6 +17,8 @@ void DotSceneLoader::parseDotScene(const String &SceneName, const String &groupN
 	XMLDocument   *XMLDoc = 0;
 	XMLElement   *XMLRoot;
 
+	LogManager::getSingleton().logMessage(SceneName);
+
 	try
 	{
 		// Strip the path

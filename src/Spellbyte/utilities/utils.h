@@ -2,6 +2,8 @@
 #define _UTILS_H_
 
 #include <cstring>
+#include <vector>
+#include "tinyxml2.h"
 
 // This functions reads either a BYTE, WORD, or DWORD from a vector of unsigned char
 template <class T>
@@ -39,4 +41,62 @@ inline long dwordToLong(unsigned long dWord)
     return unsignedCharArrayToLong(tCount);
 }
 
+inline bool loadPosition(tinyxml2::XMLElement *elt, float &x, float &y, float &z)
+{
+    tinyxml2::XMLElement *pos = elt->FirstChildElement("position");
+    if(!pos)
+    {
+        return false;
+    }
+    x = pos->FloatAttribute("x");
+    y = pos->FloatAttribute("y");
+    z = pos->FloatAttribute("z");
+    return true;
+}
+
+inline bool loadScale(tinyxml2::XMLElement *elt, float &x, float &y, float &z)
+{
+    tinyxml2::XMLElement *pos = elt->FirstChildElement("scale");
+    if(!pos)
+    {
+        return false;
+    }
+    x = pos->FloatAttribute("x");
+    y = pos->FloatAttribute("y");
+    z = pos->FloatAttribute("z");
+    return true;
+}
+
+// Return 0 of rotate does not exist
+// Return 1 if rotation uses quaternion (PRIORITY)
+// Return 2 if rotation has roll, pitch, and yaw
+inline int loadRotate(tinyxml2::XMLElement *elt, float &roll, float &pitch, float &yaw, float &qw, float &qx, float &qy, float &qz)
+{
+    tinyxml2::XMLElement *pos = elt->FirstChildElement("rotate");
+    if(!pos)
+    {
+        return 0;
+    }
+    if(pos->QueryFloatAttribute("qw", &qw) != tinyxml2::XML_NO_ATTRIBUTE &&
+       pos->QueryFloatAttribute("qx", &qx) != tinyxml2::XML_NO_ATTRIBUTE &&
+       pos->QueryFloatAttribute("qy", &qy) != tinyxml2::XML_NO_ATTRIBUTE &&
+       pos->QueryFloatAttribute("qz", &qz) != tinyxml2::XML_NO_ATTRIBUTE)
+    {
+        return 1;
+    }
+    roll = pos->FloatAttribute("roll");
+    pitch = pos->FloatAttribute("pitch");
+    yaw = pos->FloatAttribute("yaw");
+    return 2;
+}
+
+template <class container>
+inline void DeleteSTLContainer(container& c)
+{
+  for(typename container::iterator it = c.begin(); it != c.end(); ++it)
+  {
+    delete *it;
+    *it = NULL;
+  }
+}
 #endif // _UTILS_H_

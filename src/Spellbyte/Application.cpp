@@ -11,6 +11,8 @@
  */
 
 #include "Application.h"
+#include "SLB.hpp"
+#include "console/LuaManager.h"
 #include "states/SplashState.h"
 #include "states/LoadState.h"
 #include "states/MenuState.h"
@@ -18,6 +20,7 @@
 #include "states/PauseState.h"
 #include "states/OptionsState.h"
 #include "states/PlayMenuState.h"
+#include "states/Editor.h"
 #include "ControlManager.h"
 
 namespace SpellByte
@@ -127,14 +130,23 @@ namespace SpellByte
         // Initialize Ogre3D
         if(!initOgre("SpellByte", 0, 0))
             return;
+        LOG("Ogre Initialization Complete");
+
+        LOG("Initializing LUA Manager");
+        LuaManager::getInstance()->Init();
+        LOG("Binding Application to LUA");
+        bindToLUA();
+        LOG("Complete");
 
         SceneMgr = OgreRoot->createSceneManager(Ogre::ST_GENERIC, "SpellByteSceneMgr");
 
+        LOG("Loading SpellByte configuration files");
         loadConfig();
         language = getConfigString("language");
         // Initialize our strings
         loadStrings(language);
 
+        LOG("Initializing CEGUI");
         // Initialize CEGUI
         ceguiRenderer = &CEGUI::OgreRenderer::bootstrapSystem();
 
@@ -146,15 +158,17 @@ namespace SpellByte
 
         CEGUI::SchemeManager::getSingleton().createFromFile( "GameMenu.scheme" );
         CEGUI::SchemeManager::getSingleton().createFromFile( "TaharezLook.scheme" );
+        CEGUI::SchemeManager::getSingleton().createFromFile( "VanillaSkin.scheme" );
         ceguiContext = &CEGUI::System::getSingleton().getDefaultGUIContext();
         ceguiContext->getMouseCursor().setDefaultImage( "GameMenuImages/MouseCursor" );
         ceguiContext->injectMousePosition(0.0, 0.0);
         ceguiContext->getMouseCursor().show();
+        LOG("CEUI Initialized");
 
-        Log->logMessage("Ogre initialized...");
-
+        LOG("Initializing GameStateManager");
         GameStateManager = new StateManager();
 
+        LOG("Initializing States");
         SplashState::create(GameStateManager, "SplashState");
         LoadState::create(GameStateManager, "LoadState");
         MenuState::create(GameStateManager, "MenuState");
@@ -162,16 +176,20 @@ namespace SpellByte
         PauseState::create(GameStateManager, "PauseState");
         GameState::create(GameStateManager, "GameState");
         PlayMenuState::create(GameStateManager, "PlayMenuState");
+        //EditorState::create(GameStateManager, "EditorState");
 
+        LOG("Setting initial state");
         GameStateManager->changeState(GameStateManager->findByName("GameState"));
 
+        LOG("SpellByte Initialization Complete, starting...");
         OgreRoot->addFrameListener(this);
         OgreRoot->startRendering();
 
         // Want to make a shutdown function and place anything that needs to be shutdown here.
-        CONTROL->shutDown();
+        LOG("Shutting down");
 
-        Log->logMessage("Shutting down");
+        LOG("Shuttin down control");
+        CONTROL->shutDown();
     }
 
     bool Application::loadStrings(std::string language)
@@ -378,15 +396,25 @@ namespace SpellByte
     bool Application::keyPressed(const OIS::KeyEvent &keyEventRef)
     {
         // Following comment is left for reference:
-        //Log->logMessage(Keyboard->getAsString(keyEventRef.key));
+        //Log->logMessage(Ogre::StringConverter::toString(keyEventRef.key));
         //CEGUI::InjectedInputReceiver::injectKeyDown(keyEventRef.key);
         //CEGUI::InjectedInputReceiver::injectChar(keyEventRef.text);
+        ceguiContext->injectKeyDown((CEGUI::Key::Scan)keyEventRef.key);
+        ceguiContext->injectChar(keyEventRef.text);
 
         UserEvent *tmp = NULL;
         if(Keyboard->isKeyDown(OIS::KC_SYSRQ))
         {
             RenderWindow->writeContentsToTimestampedFile("SpellByte_Screenshot_", ".jpg");
             return true;
+        }
+        else if(keyEventRef.key == OIS::KC_GRAVE)
+        {
+            tmp = new UserEvent(UserEvent::TERMINAL);
+        }
+        else if(keyEventRef.key == OIS::KC_F12)
+        {
+            tmp = new UserEvent(UserEvent::RELOAD);
         }
         else if(keyEventRef.key == OIS::KC_MINUS)
         {
@@ -406,7 +434,7 @@ namespace SpellByte
         }
         else if(keyEventRef.key == OIS::KC_C)
         {
-            enabledCollision = (enabledCollision == true ? false : true);
+            tmp = new UserEvent(UserEvent::PLAYER_SET_CLIPPING);
         }
         else if(keyEventRef.key == OIS::KC_ESCAPE)
         {
@@ -436,6 +464,10 @@ namespace SpellByte
         {
             tmp = new UserEvent(UserEvent::PLAYER_DOWN_ON);
         }
+        else if(keyEventRef.key == OIS::KC_LSHIFT)
+        {
+            tmp = new UserEvent(UserEvent::PLAYER_RUN_ON);
+        }
         if(tmp != NULL)
         {
             CONTROL->addEvent(tmp);
@@ -446,6 +478,8 @@ namespace SpellByte
 
     bool Application::keyReleased(const OIS::KeyEvent &keyEventRef)
     {
+        ceguiContext->injectKeyUp((CEGUI::Key::Scan)keyEventRef.key);
+
         //CEGUI::InjectedInputReceiver::injectKeyUp(keyEventRef.key);
         UserEvent *tmp = NULL;
         if(keyEventRef.key == OIS::KC_MINUS)
@@ -488,6 +522,10 @@ namespace SpellByte
         {
             tmp = new UserEvent(UserEvent::PLAYER_DOWN_OFF);
         }
+        else if(keyEventRef.key == OIS::KC_LSHIFT)
+        {
+            tmp = new UserEvent(UserEvent::PLAYER_RUN_OFF);
+        }
         if(tmp != NULL)
         {
             CONTROL->addEvent(tmp);
@@ -506,6 +544,8 @@ namespace SpellByte
         }
 
         UserEvent* tmp = new UserEvent(UserEvent::MOUSE_MOVE);
+        tmp->setWidth(evt.state.width);
+        tmp->setHeight(evt.state.height);
         tmp->setAbs(evt.state.X.abs, evt.state.Y.abs);
         tmp->setRel(evt.state.X.rel, evt.state.Y.rel);
         CONTROL->addEvent(tmp);
@@ -584,5 +624,15 @@ namespace SpellByte
         CONTROL->addEvent(tmp);
 
         return true;
+    }
+
+    void Application::bindToLUA()
+    {
+        SLB::Class<Application, SLB::Instance::NoCopyNoDestroy >("APP")
+            .set("getConfigFloat", &Application::getConfigFloat)
+            .set("getConfigString", &Application::getConfigString)
+            .set("getString", &Application::getString);
+
+        SLB::setGlobal<Application*>(&(*LUAMANAGER->LUA), APP, "app");
     }
 }

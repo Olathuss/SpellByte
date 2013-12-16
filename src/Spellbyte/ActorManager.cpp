@@ -31,7 +31,8 @@ namespace SpellByte
     {
         LOG("Registering actor with id: " + Ogre::StringConverter::toString(newActor->getID()));
         //std::pair<int, ActorPtr> actorPair(newActor->getID(), newActor);
-        ActorMap.insert(std::make_pair(newActor->getID(), newActor));
+        const int key = newActor->getID();
+        ActorMap.insert(std::make_pair(key, newActor));
         //ActorMap[newActor->getID()]
     }
 }

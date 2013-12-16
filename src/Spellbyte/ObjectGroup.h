@@ -1,0 +1,59 @@
+#ifndef _OBJ_GROUP_H_
+#define _OBJ_GROUP_H_
+
+#include <vector>
+#include "Object.h"
+#include "utilities/tinyxml2.h"
+
+namespace SpellByte
+{
+    class ObjectFactory;
+    class ObjectGroup
+    {
+    private:
+        enum Y_SNAP
+        {
+            // Snap to terrain
+            Y_TERRAIN,
+            // Snap relative to terrain
+            Y_RELATIVE,
+            // Snap to absolute Y position
+            Y_ABSOLUTE,
+            Y_INVALID
+        };
+        std::string GroupName;
+        bool Enabled;
+        std::vector<Object*> ObjectVector;
+        std::vector<ObjectGroup*> ObjectGroupVector;
+        int ysnap;
+        static int NextValidID;
+        int ID;
+
+    public:
+        ObjectGroup();
+        ~ObjectGroup();
+
+        void init(tinyxml2::XMLElement *groupElt, ObjectFactory *objFactory, Ogre::SceneNode *parentNode = NULL, ObjectGroup *parentGroup = NULL);
+
+        void loadSubGroups(tinyxml2::XMLElement *groupElt, ObjectFactory *objFactory);
+        void loadObjects(tinyxml2::XMLElement *objectElt, ObjectFactory *objFactory);
+
+        void addObject(const Object *addObj);
+        void removeObject(const Object *removeObj);
+
+        void addObjectGroup(const ObjectGroup *addObjGroup);
+        void resetY();
+
+        // save group to XML
+        void saveGroup(tinyxml2::XMLDocument *xmlDoc, tinyxml2::XMLElement *elt);
+
+        /*void setPosition(const Ogre::Real x, const Ogre::Real y, const Ogre::Real z);
+        void setScale(const Ogre::Real x, const Ogre::Real y, const Ogre::Real z);
+        void setRotate(const Ogre::Radian roll, const Ogre::Radian pitch, const Ogre::Radian yaw);*/
+
+        Ogre::SceneNode *GroupNode;
+        ObjectGroup *parentGroup;
+    };
+}
+
+#endif // _OBJ_GROUP_H_

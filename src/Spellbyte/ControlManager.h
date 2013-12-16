@@ -29,6 +29,7 @@ namespace SpellByte
         {
             START = 0,
             ESCAPE,
+            TERMINAL,
             MOUSE_CLICK,
             MOUSE_RIGHT_PRESS,
             MOUSE_LEFT_PRESS,
@@ -39,6 +40,7 @@ namespace SpellByte
             MOUSE_RELEASE,
             MOUSE_MOVE,
             WORLD_ACTION_START,
+            RELOAD,
             AMBIENT_LIGHT_UP_ON,
             AMBIENT_LIGHT_UP_OFF,
             AMBIENT_LIGHT_DOWN_ON,
@@ -49,6 +51,7 @@ namespace SpellByte
             DIR_LIGHT_DOWN_OFF,
             WORLD_ACTION_END,
             PLAYER_ACTION_START,
+            PLAYER_SET_CLIPPING,
             PLAYER_UP_ON,
             PLAYER_UP_OFF,
             PLAYER_DOWN_ON,
@@ -61,6 +64,8 @@ namespace SpellByte
             PLAYER_RIGHT_OFF,
             PLAYER_BACKWARD_ON,
             PLAYER_BACKWARD_OFF,
+            PLAYER_RUN_ON,
+            PLAYER_RUN_OFF,
             PLAYER_ACTION_END,
             END
         };
@@ -81,6 +86,19 @@ namespace SpellByte
         // Set relative mouse X/Y
         void setRel(const int &x, const int &y);
 
+        void setWidth(const int &w)
+        {
+            width = w;
+        };
+
+        void setHeight(const int &h)
+        {
+            height = h;
+        };
+
+        const int getWidth() const { return width; };
+        const int getHeight() const { return height; };
+
         bool operator==(const UserEvent &rhs);
 
     private:
@@ -88,6 +106,8 @@ namespace SpellByte
         int absY;
         int relX;
         int relY;
+        int width;
+        int height;
         int type;
     };
 

@@ -17,7 +17,7 @@ namespace SpellByte
     {
     private:
         // Use map to relate actor ID with its pointer
-        typedef std::map<int, Actor*> ActorMapType;
+        typedef std::map<const int, Actor*> ActorMapType;
 
     private:
         // Map container with ID and ActorPtr

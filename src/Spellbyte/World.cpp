@@ -1,15 +1,22 @@
+#include <OgreSubEntity.h>
+
 #include "World.h"
 #include "define.h"
-#include "ActorManager.h"
-#include "ActorFactory.h"
+//#include "ActorManager.h"
+#include "console/LuaManager.h"
+#include "DotSceneLoader.h"
+#include "utilities/utils.h"
 
 namespace SpellByte
 {
     World::World()
     {
         dirLightColor.r = APP->getConfigFloat("directionalr");
-        dirLightColor.g = APP->getConfigFloat("directionalr");
+        dirLightColor.g = APP->getConfigFloat("directionalg");
         dirLightColor.b = APP->getConfigFloat("directionalb");
+        sunLightColor.r = APP->getConfigFloat("sunr");
+        sunLightColor.g = APP->getConfigFloat("sung");
+        sunLightColor.b = APP->getConfigFloat("sunb");
         ambientLightColor.r = APP->getConfigFloat("ambientr");
         ambientLightColor.g = APP->getConfigFloat("ambientg");
         ambientLightColor.b = APP->getConfigFloat("ambientb");
@@ -17,29 +24,83 @@ namespace SpellByte
         lightChanged = false;
         ambientLightUp = false;
         ambientLightDown = false;
-        dirLightUp = false;
-        dirLightDown = false;
+        sunLightUp = false;
+        sunLightDown = false;
 
         SceneMgr = APP->SceneMgr;
+        APP->attachWorld(this);
+        objectsNode = SceneMgr->getRootSceneNode()->createChildSceneNode("objectsNode");
+
+        Ogre::Plane plane(Ogre::Vector3::UNIT_Y, 0);
+
+        Ogre::MeshManager::getSingleton().createPlane("ground", Ogre::ResourceGroupManager::DEFAULT_RESOURCE_GROUP_NAME,
+                                                        plane, 1500, 1500, 20, 20, true, 1, 5, 5, Ogre::Vector3::UNIT_Z);
+
+        terrainGlobals = NULL;
+        terrainGroup = NULL;
+        GameCollisionTools = NULL;
     }
 
     World::~World()
     {
+        APP->detachWorld();
         destroyScene();
+
     }
 
-    bool World::init(Ogre::SceneManager *sMgr)
+    bool World::init(Ogre::Camera *cam, Player *player)
     {
-        SceneMgr = sMgr;
+        bindToLUA();
+        SLB::setGlobal<World*>(LUAMANAGER->LUA, this, "world");
+        Camera = cam;
+        GamePlayer = player;
 
         return true;
     }
 
-    bool World::loadWorld()
+    void World::bindToLUA()
     {
+        SLB::Class< World >("SpellByte::World")
+            .set("loadWorld", ( bool(World::*)(std::string) ) &World::loadWorld)
+            .set("saveWorld", ( bool(World::*)(std::string) ) &World::saveWorld)
+            .set("reload", &World::reload);
+    }
+
+    void World::saveWorld(std::string worldFile)
+    {
+        LOG("World: Saving world file to (WARNING: WILL OVERWRITE): " + worldFile);
+        tinyxml2::XMLDocument xmlFile;
+
+        // Save terrain information to file
+        tinyxml2::XMLElement *xml_terrain = xmlFile.NewElement("terrain");
+        xmlFile.InsertEndChild(xml_terrain);
+        tinyxml2::XMLElement *xml_heightmap = xmlFile.NewElement("heightmap");
+        xml_terrain->InsertEndChild(xml_heightmap);
+        xml_heightmap->SetAttribute("name", heightMap.c_str());
+        xml_heightmap->SetAttribute("multi", multi_terrain);
+        xml_heightmap->SetAttribute("height", mapheight);
+        xml_heightmap->SetAttribute("width", mapwidth);
+
+        tinyxml2::XMLElement *xml_objects = xmlFile.NewElement("objects");
+        xmlFile.InsertEndChild(xml_objects);
+        for(unsigned int i = 0; i < WorldObjects.size(); i++)
+        {
+            WorldObjects[i]->saveObject(&xmlFile, xml_objects);
+        }
+        for(unsigned int i = 0; i < WorldGroups.size(); i++)
+        {
+            WorldGroups[i]->saveGroup(&xmlFile, xml_objects);
+        }
+
+        xmlFile.SaveFile(worldFile.c_str());
+    }
+
+    bool World::loadWorld(std::string worldFile)
+    {
+        clearWorld();
         LOG("World: Loading world file");
-        std::string worldFile = "world.xml";
-        XMLResourcePtr xmlFile = APP->xmlManager->load(worldFile,"General");
+        worldName = worldFile;
+        XMLResourcePtr xmlFile = APP->xmlManager->load(worldName,"General");
         tinyxml2::XMLDocument *worldDoc = xmlFile->getXML();
         if(!worldDoc)
         {
@@ -51,6 +112,9 @@ namespace SpellByte
         tinyxml2::XMLElement *element;
 
         element = worldDoc->FirstChildElement("terrain");
+        mapwidth = mapheight = 0;
+        //int width, height;
+        //width = height = 0;
         if(element)
         {
             LOG("World: Getting heightmap name");
@@ -60,8 +124,45 @@ namespace SpellByte
                 Ogre::String desc = "Error, no heightmap defined";
                 throw(Ogre::Exception(20, desc, "World"));
             }
-            heightMap = Ogre::String(next->Attribute("value"));
-            LOG("World: heightmap name: " + heightMap);
+            heightMap = next->Attribute("name");
+            if(next->BoolAttribute("multi"))
+            {
+                Ogre::String baseName;
+                Ogre::String ext;
+                Ogre::StringUtil::splitBaseFilename(heightMap, baseName, ext);
+                multi_terrain = true;
+                //heightMapExt = heightMap.;
+                mapwidth = next->IntAttribute("width");
+                mapheight = next->IntAttribute("height");
+                LOG("World: heightmap name: " + heightMap);
+
+                // x + y * width
+                for(int x = 0; x < mapwidth; ++x)
+                {
+                    for(int y = 0; y  < mapheight; ++y)
+                    {
+                        int fileNumber = x + y * mapwidth + 1;
+                        Ogre::String tmp;
+                        if(fileNumber < 10)
+                        {
+                            tmp = "0" + Ogre::StringConverter::toString(fileNumber);
+                        }
+                        else
+                        {
+                            tmp = Ogre::StringConverter::toString(fileNumber);
+                        }
+                        Ogre::String fileName = baseName + tmp + "." + ext;
+                        heightMaps.push_back(fileName);
+                    }
+                }
+            }
+            else
+            {
+                multi_terrain = false;
+                heightMaps.push_back(heightMap);
+                mapwidth = 1;
+                mapheight = 1;
+            }
         }
         else
         {
@@ -71,30 +172,94 @@ namespace SpellByte
 
         loadTerrain();
 
-        LOG("World: Parsing objects");
-        element = worldDoc->FirstChildElement("objects");
-        if(element)
-        {
-            tinyxml2::XMLElement *object = element->FirstChildElement("static");
-            ActorFactory actFactory = ActorFactory();
-            while(object)
-            {
-                LOG("Creating Actor Name: " + Ogre::String(object->Attribute("name")));
-                Actor *newActor = actFactory.createActor(SceneMgr, terrainGroup, object);
-                worldActors.push_back(newActor);
-                //ActorMgr->registerActor(newActor);
-                object = object->NextSiblingElement();
-            }
-        }
+        loadObjects(worldDoc);
+
+        xmlFile->unload();
+        APP->xmlManager->unload(worldFile);
         LOG("World: World loading complete");
         return true;
     }
 
+    void World::clearWorld()
+    {
+        DeleteSTLContainer(WorldGroups);
+        WorldGroups.clear();
+        DeleteSTLContainer(WorldObjects);
+        WorldObjects.clear();
+        if(objectsNode)
+            objectsNode->removeAndDestroyAllChildren();
+        SceneMgr->destroyAllEntities();
+        SceneMgr->destroyAllLights();
+        /*for(unsigned int i = 0; i < ObjectData.size(); i++)
+        {
+            delete ObjectData[i];
+        }
+        ObjectData.clear();*/
+        destroyScene();
+        heightMaps.clear();
+    }
+
+    bool World::reload()
+    {
+        clearWorld();
+        LOG("World: Reloading world objects");
+        loadWorld(worldName);
+        return true;
+    }
+
+    void World::loadObjects(tinyxml2::XMLDocument *worldDoc)
+    {
+        LOG("World: Parsing objects");
+        tinyxml2::XMLElement *element = worldDoc->FirstChildElement("objects");
+        ObjectFactory objFactory = ObjectFactory();
+        if(element)
+        {
+            LOG("Loading Independent Objects");
+            loadIndependentObjects(element, &objFactory);
+
+            LOG("Loading Groups");
+            //Ogre::SceneNode *groupNode = objectsNode->createChildSceneNode(grpName);
+            //processGroup(element, &objFactory);
+            processGroup(element, &objFactory, objectsNode);
+        }
+
+        for(unsigned int i = 0; i < WorldGroups.size(); i++)
+        {
+            WorldGroups[i]->resetY();
+        }
+    }
+
+    void World::processGroup(tinyxml2::XMLElement *groupElt, ObjectFactory *objFactory, Ogre::SceneNode *grpNode)
+    {
+        tinyxml2::XMLElement *group = groupElt->FirstChildElement("group");
+        while(group)
+        {
+            ObjectGroup *objGroup = new ObjectGroup();
+            objGroup->init(group, objFactory, grpNode);
+            WorldGroups.push_back(objGroup);
+            group = group->NextSiblingElement("group");
+        }
+    }
+
+    void World::loadIndependentObjects(tinyxml2::XMLElement *elt, ObjectFactory *objFactory)
+    {
+        tinyxml2::XMLElement *object = elt->FirstChildElement("static");
+        while(object)
+        {
+            LOG("Creating Objects: " + Ogre::String(object->Attribute("name")));
+            WorldObjects.push_back(objFactory->createObject(object, objectsNode));
+
+            object = object->NextSiblingElement("static");
+        }
+    }
+
     void World::loadTerrain()
     {
-        SceneMgr->setSkyBox(true, "Examples/StormySkyBox");
-        SceneMgr->setShadowTechnique(Ogre::SHADOWTYPE_STENCIL_MODULATIVE);
-        SceneMgr->setShadowFarDistance(APP->getConfigFloat("shadowDistance"));
+        SceneMgr->setSkyBox(true, "GrimmNight");
+        //SceneMgr->setSkyDome(true, "CloudyGrey", 5, 4);
+        //SceneMgr->setShadowTechnique(Ogre::SHADOWTYPE_STENCIL_MODULATIVE);
+        //SceneMgr->setShadowFarDistance(APP->getConfigFloat("shadowDistance"));
+        //SceneMgr->setShadowFarDistance(5000);
 
         Ogre::Vector3 lightdir(0.55, -0.3, 0.75);
         lightdir.normalise();
@@ -104,28 +269,29 @@ namespace SpellByte
         dirLight->setDirection(Ogre::Vector3(0, -1, 1));
         dirLight->setDiffuseColour(Ogre::ColourValue::White);
         dirLight->setSpecularColour(dirLightColor);
-        dirLight->setCastShadows(false);
+        //dirLight->setCastShadows(true);
 
         sunLight = SceneMgr->createLight("sunLight");
         sunLight->setType(Ogre::Light::LT_POINT);
-        sunLight->setPosition(Ogre::Vector3(-2000, 2000, 0));
-        sunLight->setDiffuseColour(dirLightColor);
-        sunLight->setSpecularColour(dirLightColor);
-        sunLight->setShadowFarClipDistance(5000);
-        sunLight->setShadowFarDistance(5000);
+        sunLight->setPosition(Ogre::Vector3(0, 1000, 0));
+        sunLight->setDiffuseColour(sunLightColor);
+        sunLight->setSpecularColour(sunLightColor);
+        //sunLight->setShadowFarClipDistance(50000);
+        //sunLight->setShadowFarDistance(100);
 
         SceneMgr->setAmbientLight(ambientLightColor);
 
         terrainGlobals = OGRE_NEW Ogre::TerrainGlobalOptions();
 
-        terrainGroup = OGRE_NEW Ogre::TerrainGroup(SceneMgr, Ogre::Terrain::ALIGN_X_Z, 1025, 12000.0f);
-        terrainGroup->setFilenameConvention(Ogre::String("BasicTutorial3Terrain"), Ogre::String("dat"));
-        terrainGroup->setOrigin(Ogre::Vector3::ZERO);
+        terrainGroup = OGRE_NEW Ogre::TerrainGroup(SceneMgr, Ogre::Terrain::ALIGN_X_Z, APP->getConfigFloat("heightmapsize") + 1, 12000.0f);
+        terrainGroup->setFilenameConvention(Ogre::String("SpellByteTerrain"), Ogre::String("dat"));
+        terrainGroup->setOrigin(mapwidth * Ogre::Vector3(APP->getConfigFloat("heightmapsize") / 2, 0, mapheight * APP->getConfigFloat("heightmapsize") / 2));
+        //terrainGroup->setOrigin(Ogre::Vector3::ZERO);
 
         configureTerrainDefaults(dirLight);
 
-        for(long x = 0; x <= 0; ++x)
-            for(long y = 0; y <= 0; ++y)
+        for(long x = 0; x < mapwidth; ++x)
+            for(long y = 0; y < mapheight; ++y)
                 defineTerrain(x, y);
 
         terrainGroup->loadAllTerrains(true);
@@ -140,15 +306,81 @@ namespace SpellByte
             }
         }
         terrainGroup->freeTemporaryResources();
+        if(GameCollisionTools)
+            GameCollisionTools->terrGroup = terrainGroup;
+        //terrainGroup->saveAllTerrains(false);
     }
 
     void World::createScene()
     {
-        //loadWorld();
+        /*goatNode = SceneMgr->getRootSceneNode()->createChildSceneNode("goat");
+        Ogre::DotSceneLoader *dsl = new Ogre::DotSceneLoader();
+        dsl->parseDotScene("goat.scene", "Test", SceneMgr, goatNode);
+        goatNode->setPosition(100, terrainGroup->getHeightAtWorldPosition(100, 0, 100), 100);
+        goatAnimState = SceneMgr->getEntity("geomU3D1")->getAnimationState("my_animation");
+        goatAnimState->setLoop(true);
+        goatAnimState->setEnabled(true);
+        LOG("Anim length: " + Ogre::StringConverter::toString(goatAnimState->getLength()));
+        delete dsl;*/
+
+
+        //manNode->pitch(Ogre::Radian(90));
+       /* Ogre::AnimationStateSet *animSet = ent->getAllAnimationStates();
+        Ogre::AnimationStateIterator iter = animSet->getAnimationStateIterator();
+        while(iter.hasMoreElements())
+        {
+            LOG("Animation name: " + iter.getNext()->getAnimationName());
+        }
+        manAnimState = ent->getAnimationState("default_skl");
+        manAnimState->setLoop(true);
+        manAnimState->setEnabled(true);*/
+
+        /*Ogre::Entity *ent = SceneMgr->createEntity("male", "MedBaseMaleApril2013.mesh");
+        manNode = SceneMgr->getRootSceneNode()->createChildSceneNode("male");
+        manNode->attachObject(ent);
+        manNode->setScale(0.01, 0.01, 0.01);
+
+        std::vector<Ogre::String> entParts;
+        entParts.push_back("BaseArms");
+        entParts.push_back("BaseHands");
+        entParts.push_back("BaseHairC");
+        entParts.push_back("Head");
+        entParts.push_back("Teeth");
+        entParts.push_back("Lowerteeth");
+        entParts.push_back("ThiefHood");
+        entParts.push_back("ThiefTorso");
+        entParts.push_back("ThiefTrousers_MinerMeshExchange_");
+        entParts.push_back("MinerBoots");
+        //entParts.push_back("FarmerTorso");
+        for(unsigned int i = 0; i < ent->getNumSubEntities(); ++i)
+        {
+            Ogre::SubEntity *sEnt;
+            sEnt = ent->getSubEntity(i);
+            sEnt->setVisible(false);
+        }
+        for(unsigned int i = 0; i < entParts.size(); ++i)
+        {
+            Ogre::SubEntity *sEnt;
+            sEnt = ent->getSubEntity(entParts[i]);
+            sEnt->setVisible(true);
+        }
+        manNode->setPosition(0, terrainGroup->getHeightAtWorldPosition(0, 0, 0), 0);
+        manAnimState = ent->getAnimationState("GENSneaking");
+        manAnimState->setLoop(true);
+        manAnimState->setEnabled(true);*/
     }
 
     void World::update(const Ogre::FrameEvent &evt)
     {
+        //goatAnimState->addTime(evt.timeSinceLastFrame);
+        //manAnimState->addTime(evt.timeSinceLastFrame);
+        /*if(manAnimState->getAnimationName() == "NPCSitDown" && manAnimState->hasEnded()) {
+            LOG("Animation OVER!!!");
+            manAnimState = SceneMgr->getEntity("male")->getAnimationState("NPCTalking");
+            manAnimState->setLoop(true);
+            manAnimState->setEnabled(true);
+        }*/
+
         if(ambientLightUp)
         {
             ambientLightColor.r += lightChangeValue;
@@ -163,19 +395,21 @@ namespace SpellByte
             ambientLightColor.b -= lightChangeValue;
             SceneMgr->setAmbientLight(ambientLightColor);
         }
-        if(dirLightUp)
+        if(sunLightUp)
         {
-            dirLightColor.r += lightChangeValue;
-            dirLightColor.g += lightChangeValue;
-            dirLightColor.b += lightChangeValue;
-            dirLight->setSpecularColour(dirLightColor);
+            sunLightColor.r += lightChangeValue;
+            sunLightColor.g += lightChangeValue;
+            sunLightColor.b += lightChangeValue;
+            //dirLight->setSpecularColour(sunLightColor);
+            sunLight->setSpecularColour(sunLightColor);
+            sunLight->setDiffuseColour(sunLightColor);
         }
-        if(dirLightDown)
+        if(sunLightDown)
         {
-            dirLightColor.r -= lightChangeValue;
-            dirLightColor.g -= lightChangeValue;
-            dirLightColor.b -= lightChangeValue;
-            dirLight->setSpecularColour(dirLightColor);
+            sunLightColor.r -= lightChangeValue;
+            sunLightColor.g -= lightChangeValue;
+            sunLightColor.b -= lightChangeValue;
+            sunLight->setDiffuseColour(sunLightColor);
         }
     }
 
@@ -183,36 +417,39 @@ namespace SpellByte
     {
         switch(event)
         {
-            case UserEvent::AMBIENT_LIGHT_UP_ON:
-                ambientLightDown = false;
-                ambientLightUp = true;
-                break;
-            case UserEvent::AMBIENT_LIGHT_UP_OFF:
-                ambientLightUp = false;
-                break;
-            case UserEvent::AMBIENT_LIGHT_DOWN_ON:
-                ambientLightDown = true;
-                ambientLightUp = false;
-                break;
-            case UserEvent::AMBIENT_LIGHT_DOWN_OFF:
-                ambientLightDown = false;
-                break;
-            case UserEvent::DIR_LIGHT_UP_ON:
-                dirLightUp = true;
-                dirLightDown = false;
-                break;
-            case UserEvent::DIR_LIGHT_UP_OFF:
-                dirLightUp = false;
-                break;
-            case UserEvent::DIR_LIGHT_DOWN_ON:
-                dirLightDown = true;
-                dirLightUp = false;
-                break;
-            case UserEvent::DIR_LIGHT_DOWN_OFF:
-                dirLightDown = false;
-                break;
-            default:
-                break;
+        case UserEvent::RELOAD:
+            reload();
+            break;
+        case UserEvent::AMBIENT_LIGHT_UP_ON:
+            ambientLightDown = false;
+            ambientLightUp = true;
+            break;
+        case UserEvent::AMBIENT_LIGHT_UP_OFF:
+            ambientLightUp = false;
+            break;
+        case UserEvent::AMBIENT_LIGHT_DOWN_ON:
+            ambientLightDown = true;
+            ambientLightUp = false;
+            break;
+        case UserEvent::AMBIENT_LIGHT_DOWN_OFF:
+            ambientLightDown = false;
+            break;
+        case UserEvent::DIR_LIGHT_UP_ON:
+            sunLightUp = true;
+            sunLightDown = false;
+            break;
+        case UserEvent::DIR_LIGHT_UP_OFF:
+            sunLightUp = false;
+            break;
+        case UserEvent::DIR_LIGHT_DOWN_ON:
+            sunLightDown = true;
+            sunLightUp = false;
+            break;
+        case UserEvent::DIR_LIGHT_DOWN_OFF:
+            sunLightDown = false;
+            break;
+        default:
+            break;
         }
     }
 
@@ -236,7 +473,9 @@ namespace SpellByte
         else
         {
             Ogre::Image img;
-            getTerrainImage(x % 2 != 0, y % 2 != 0, img, heightMap);
+            int index = x + y * mapwidth;
+            img.load(heightMaps[index], Ogre::ResourceGroupManager::DEFAULT_RESOURCE_GROUP_NAME);
+            //getTerrainImage(x % 2 != 0, y % 2 != 0, img, heightMap);
             terrainGroup->defineTerrain(x, y, &img);
             terrainsImported = true;
         }
@@ -246,10 +485,10 @@ namespace SpellByte
     {
         Ogre::TerrainLayerBlendMap* blendMap0 = terrain->getLayerBlendMap(1);
         Ogre::TerrainLayerBlendMap* blendMap1 = terrain->getLayerBlendMap(2);
-        Ogre::Real minHeight0 = 70;
-        Ogre::Real fadeDist0 = 160;
-        Ogre::Real minHeight1 = 70;
-        Ogre::Real fadeDist1 = 60;
+        Ogre::Real minHeight0 = 260;
+        Ogre::Real fadeDist0 = 10;
+        Ogre::Real minHeight1 = 340;
+        Ogre::Real fadeDist1 = 5;
         float* pBlend0 = blendMap0->getBlendPointer();
         float* pBlend1 = blendMap1->getBlendPointer();
         for (Ogre::uint16 y = 0; y < terrain->getLayerBlendMapSize(); ++y)
@@ -288,28 +527,36 @@ namespace SpellByte
         terrainGlobals->setCompositeMapDiffuse(light->getDiffuseColour());
 
         Ogre::Terrain::ImportData &defaultimp = terrainGroup->getDefaultImportSettings();
-        defaultimp.terrainSize = 1025;
+        defaultimp.terrainSize = APP->getConfigFloat("heightmapsize") + 1;
         defaultimp.worldSize = 12000.0f;
-        defaultimp.inputScale = 4800; // due terrain.png is 8 bpp
+        defaultimp.inputScale = APP->getConfigFloat("inputscale"); // due terrain.png is 8 bpp
         defaultimp.minBatchSize = 33;
         defaultimp.maxBatchSize = 65;
 
         // textures
         defaultimp.layerList.resize(3);
-        defaultimp.layerList[0].worldSize = 100;
+        defaultimp.layerList[0].worldSize = 5;
         defaultimp.layerList[0].textureNames.push_back("dirt_grayrocky_diffusespecular.dds");
         defaultimp.layerList[0].textureNames.push_back("dirt_grayrocky_normalheight.dds");
-        defaultimp.layerList[1].worldSize = 30;
-        defaultimp.layerList[1].textureNames.push_back("grass_green-01_diffusespecular.dds");
-        defaultimp.layerList[1].textureNames.push_back("grass_green-01_normalheight.dds");
-        defaultimp.layerList[2].worldSize = 200;
-        defaultimp.layerList[2].textureNames.push_back("growth_weirdfungus-03_diffusespecular.dds");
-        defaultimp.layerList[2].textureNames.push_back("growth_weirdfungus-03_normalheight.dds");
+        defaultimp.layerList[1].worldSize = 2;
+        defaultimp.layerList[1].textureNames.push_back("cgrass1.jpg");
+        defaultimp.layerList[1].textureNames.push_back("cgrass1.jpg");
+        defaultimp.layerList[2].worldSize = 1;
+        defaultimp.layerList[2].textureNames.push_back("wildgrass_4_seamless_1024.jpg");
+        defaultimp.layerList[2].textureNames.push_back("wildgrass_4_seamless_1024.jpg");
     }
 
     void World::destroyScene()
     {
-        OGRE_DELETE terrainGroup;
-        OGRE_DELETE terrainGlobals;
+        if(terrainGroup)
+        {
+            OGRE_DELETE terrainGroup;
+            terrainGroup = NULL;
+        }
+        if(terrainGlobals)
+        {
+            OGRE_DELETE terrainGlobals;
+            terrainGlobals = NULL;
+        }
     }
 }

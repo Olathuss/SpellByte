@@ -3,17 +3,20 @@
 
 #include "define.h"
 #include "stdafx.h"
+#include "Subscriber.h"
 #include "CollisionTools.h"
 
 namespace SpellByte
 {
-    class Player
+    class World;
+    class Player : public Subscriber
     {
+    friend World;
     public:
         Player();
         ~Player();
 
-        bool init(Ogre::SceneManager *sceneManager, Ogre::Camera *Camera);
+        bool init(Ogre::SceneManager *sceneManager, Ogre::Camera *Camera, World *world);
         void setRotation(int X, int Y);
 
         void update(const Ogre::FrameEvent &evt);
@@ -25,8 +28,14 @@ namespace SpellByte
         Ogre::String getDebugString();
         const Ogre::Vector3 getPosition();
 
+        void attachCamera(Ogre::Camera *camera);
+        void detachCamera(Ogre::Camera *camera);
+
+        virtual std::string handleConsoleCmd(std::queue<std::string> cmdQueue);
+
     private:
         Ogre::SceneManager *sceneMgr;
+        void bindToLUA();
 
         enum PLAYER_ACTIONS
         {
@@ -51,6 +60,7 @@ namespace SpellByte
 
         // Collision Handling
         MOC::CollisionTools *collisionHandler;
+        bool enabledCollision;
 
         // For FPS controls
         Ogre::Vector3 translateVector;
@@ -62,6 +72,8 @@ namespace SpellByte
         Ogre::Real playerHeight;
         Ogre::Real moveSpeed;
         void moveCamera();
+
+        World *GameWorld;
     };
 }
 

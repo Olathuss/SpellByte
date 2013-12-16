@@ -7,6 +7,7 @@
 #include "../Player.h"
 #include "../CollisionTools.h"
 #include "../World.h"
+#include "../console/console.h"
 
 namespace SpellByte
 {
@@ -33,9 +34,8 @@ namespace SpellByte
         MOC::CollisionTools* mCollisionTools;
 
     private:
-        bool useArtifex;
-
         // GUI
+        CEGUI::Window *rootWindow;
         CEGUI::Window *debugBox;
 
         // Player
