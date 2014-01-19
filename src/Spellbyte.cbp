@@ -13,10 +13,12 @@
 				<Option type="1" />
 				<Option compiler="gcc" />
 				<Compiler>
+					<Add option="-std=c++11" />
 					<Add option="-g" />
 					<Add option="-D_DEBUG" />
 				</Compiler>
 				<Linker>
+					<Add library="libOgreTerrain_d" />
 					<Add library="libCEGUIOgreRenderer-0_d" />
 					<Add library="libCEGUIBase-0_d" />
 					<Add library="OgreTerrain_d" />
@@ -42,15 +44,32 @@
 				</Compiler>
 				<Linker>
 					<Add option="-s" />
+					<Add library="libOgreTerrain" />
+					<Add library="libCEGUIOgreRenderer-0" />
+					<Add library="libCEGUIBase-0" />
+					<Add library="OgreTerrain" />
+					<Add library="OgreMain" />
+					<Add library="OIS" />
+					<Add library="libboost_date_time-mgw47-mt-d-1_51" />
+					<Add library="libboost_thread-mgw47-mt-d-1_51" />
+					<Add library="libboost_system-mgw47-mt-d-1_51" />
+					<Add library="libboost_chrono-mgw47-mt-d-1_51" />
+					<Add directory="../lib/ogre/release" />
+					<Add directory="../lib/cegui/release" />
+					<Add directory="../boost/lib" />
 				</Linker>
 			</Target>
 		</Build>
 		<Compiler>
 			<Add option="-Wall" />
+			<Add option="-fpermissive" />
 			<Add directory="../include" />
 			<Add directory="../include/OGRE" />
 			<Add directory="../../Spellbyte/boost" />
 			<Add directory="../include/OIS" />
+			<Add directory="../include/OGRE/Paging" />
+			<Add directory="Spellbyte/SLB" />
+			<Add directory="../include/lua" />
 		</Compiler>
 		<Unit filename="Spellbyte/Actor.cpp" />
 		<Unit filename="Spellbyte/Actor.h" />
@@ -67,24 +86,46 @@
 		<Unit filename="Spellbyte/ControlManager.h" />
 		<Unit filename="Spellbyte/DotSceneLoader.cpp" />
 		<Unit filename="Spellbyte/DotSceneLoader.h" />
-		<Unit filename="Spellbyte/Generators.cpp" />
-		<Unit filename="Spellbyte/Generators.h" />
+		<Unit filename="Spellbyte/Object.cpp" />
+		<Unit filename="Spellbyte/Object.h" />
+		<Unit filename="Spellbyte/ObjectFactory.cpp" />
+		<Unit filename="Spellbyte/ObjectFactory.h" />
+		<Unit filename="Spellbyte/ObjectGroup.cpp" />
+		<Unit filename="Spellbyte/ObjectGroup.h" />
 		<Unit filename="Spellbyte/OgreTerrainFix.h" />
 		<Unit filename="Spellbyte/Player.cpp" />
 		<Unit filename="Spellbyte/Player.h" />
+		<Unit filename="Spellbyte/SLB/SLB.cpp" />
+		<Unit filename="Spellbyte/SLB/SLB.hpp" />
+		<Unit filename="Spellbyte/SLB/cppfunc.cpp" />
+		<Unit filename="Spellbyte/SLB/cppfunc.h" />
+		<Unit filename="Spellbyte/SLB/lua.c">
+			<Option compilerVar="CC" />
+		</Unit>
+		<Unit filename="Spellbyte/SLB/lua/lauxlib.h" />
+		<Unit filename="Spellbyte/SLB/lua/lua.h" />
+		<Unit filename="Spellbyte/SLB/lua/luaconf.h" />
+		<Unit filename="Spellbyte/SLB/lua/lualib.h" />
 		<Unit filename="Spellbyte/SpellByte.h" />
 		<Unit filename="Spellbyte/StateListener.h" />
 		<Unit filename="Spellbyte/StateManager.cpp" />
 		<Unit filename="Spellbyte/StateManager.h" />
+		<Unit filename="Spellbyte/Subscriber.h" />
 		<Unit filename="Spellbyte/World.cpp" />
 		<Unit filename="Spellbyte/World.h" />
+		<Unit filename="Spellbyte/console/LuaManager.cpp" />
+		<Unit filename="Spellbyte/console/LuaManager.h" />
+		<Unit filename="Spellbyte/console/console.cpp" />
+		<Unit filename="Spellbyte/console/console.h" />
+		<Unit filename="Spellbyte/console/console_communicator.cpp" />
+		<Unit filename="Spellbyte/console/console_communicator.h" />
 		<Unit filename="Spellbyte/error_defines.h" />
 		<Unit filename="Spellbyte/main.cpp" />
-		<Unit filename="Spellbyte/resources/CubeResourceFile.cpp" />
-		<Unit filename="Spellbyte/resources/CubeResourceFile.h" />
-		<Unit filename="Spellbyte/resources/CubeResourceFileManager.cpp" />
-		<Unit filename="Spellbyte/resources/CubeResourceFileManager.h" />
 		<Unit filename="Spellbyte/resources/ManualLoaders.h" />
+		<Unit filename="Spellbyte/resources/SpellByteResourceFile.cpp" />
+		<Unit filename="Spellbyte/resources/SpellByteResourceFile.h" />
+		<Unit filename="Spellbyte/resources/SpellByteResourceFileManager.cpp" />
+		<Unit filename="Spellbyte/resources/SpellByteResourceFileManager.h" />
 		<Unit filename="Spellbyte/resources/XMLResource.cpp" />
 		<Unit filename="Spellbyte/resources/XMLResource.h" />
 		<Unit filename="Spellbyte/resources/XMLResourceManager.cpp" />
