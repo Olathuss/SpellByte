@@ -73,6 +73,8 @@ namespace SpellByte
         Ogre::Real moveSpeed;
         void moveCamera();
 
+        float collisionRadius;
+
         World *GameWorld;
     };
 }

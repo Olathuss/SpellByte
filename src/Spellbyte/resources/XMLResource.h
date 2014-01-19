@@ -1,8 +1,8 @@
 /*
- * Cube27
- * 2013 (C) Knightforge Studios(TM)
+ * SpellByte
+ * 2013 (C) Thomas Gull
  *
- * Cube27 XMLResource Class
+ * SpellByte XMLResource Class
  *
  * This class manages the interface
  * between Ogre::Resource and XML Files
@@ -71,7 +71,7 @@ private:
         }
     }
 
-    // Operator used to convert a ResourcePtr to Cube27ResFilePtr
+    // Operator used to convert a ResourcePtr to SBResFilePtr
     XMLResourcePtr& operator=(const Ogre::ResourcePtr &r)
     {
         if(pRep == static_cast<XMLResource*>(r.getPointer()))

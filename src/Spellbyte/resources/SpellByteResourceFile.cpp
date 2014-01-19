@@ -1,15 +1,15 @@
 /*
- * Cube27
- * 2013 (C) Knightforge Studios(TM)
+ * SpellByte
+ * 2013 (C) Thomas Gull
  *
- * Cube27 ResourceFile Class
+ * SpellByte ResourceFile Class
  *
  * This class manages the interface
- * between Ogre::Resource and Cube27 Resource Files
+ * between Ogre::Resource and SpellByte Resource Files
  *
  */
 
-#include "CubeResourceFile.h"
+#include "SpellByteResourceFile.h"
 #include "../utilities/easyzlib.h"
 #include "../utilities/utils.h"
 #include "file_defines.h"
@@ -18,20 +18,20 @@
 
 namespace SpellByte
 {
-    Cube27ResFile::Cube27ResFile(Ogre::ResourceManager *creator, const Ogre::String &name,
+    SBResFile::SBResFile(Ogre::ResourceManager *creator, const Ogre::String &name,
                   Ogre::ResourceHandle handle, const Ogre::String &group,
                   bool isManual, Ogre::ManualResourceLoader *loader) :
     Ogre::Resource(creator, name, handle, group, isManual, loader)
     {
-        createParamDictionary("Cube27ResourceFile");
+        createParamDictionary("SBResourceFile");
     }
 
-    Cube27ResFile::~Cube27ResFile()
+    SBResFile::~SBResFile()
     {
         unload();
     }
 
-    void Cube27ResFile::loadImpl()
+    void SBResFile::loadImpl()
     {
         // First get datastream from Ogre3d
         Ogre::DataStreamPtr stream = Ogre::ResourceGroupManager::getSingleton().openResource(mName, mGroup, true, this);
@@ -104,15 +104,15 @@ namespace SpellByte
         init();
     }
 
-    void Cube27ResFile::init()
+    void SBResFile::init()
     {
         for(unsigned int i = 0; i < Data.size(); ++i)
         {
-            LOG("Cube27Resource declaring resource: " + Ogre::String(Data[i].fileName));
+            LOG("SBResource declaring resource: " + Ogre::String(Data[i].fileName));
             if(Data[i].dataFormat == MESHFile)
             {
                 manualMeshLoader *mml = new manualMeshLoader(this->getName(), i);
-                Ogre::MeshManager::getSingleton().createManual(Data[i].fileName, "Cube27Resource", mml);
+                Ogre::MeshManager::getSingleton().createManual(Data[i].fileName, "SpellByteResource", mml);
             }
             if(Data[i].dataFormat == XMLFile)
             {
@@ -122,12 +122,12 @@ namespace SpellByte
         }
     }
 
-    void Cube27ResFile::unloadImpl()
+    void SBResFile::unloadImpl()
     {
         // TODO: Need to update this so it clears ALL RESOURCE DATA
     }
 
-    size_t Cube27ResFile::calculateSize() const
+    size_t SBResFile::calculateSize() const
     {
         // Calculate the total memory used by this class
         // And send it to resource manager
@@ -148,7 +148,7 @@ namespace SpellByte
     // Pass of datasize of specific resource name
     // This can be optimized later to use the actual
     // position and not have to iterate through vector
-    size_t Cube27ResFile::getDataSize(Ogre::String name) const
+    size_t SBResFile::getDataSize(Ogre::String name) const
     {
         for(unsigned int i = 0; i < Data.size(); ++i)
         {
@@ -164,7 +164,7 @@ namespace SpellByte
     }
 
     // Similar to above except returns data
-    char *Cube27ResFile::getData(Ogre::String name) const
+    char *SBResFile::getData(Ogre::String name) const
     {
         for(unsigned int i = 0; i < Data.size(); ++i)
         {
@@ -190,7 +190,7 @@ namespace SpellByte
 
     // This is kept here to demonstrate how to
     // uncompress data within the resource file
-    std::vector<unsigned char> Cube27ResFile::decompress(int data_no) const
+    std::vector<unsigned char> SBResFile::decompress(int data_no) const
     {
         // Get data length
         ezbuffer bufSrc( Data[data_no].dataLength );

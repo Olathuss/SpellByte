@@ -1,11 +1,11 @@
 /*
- * Cube27
- * 2013 (C) Knightforge Studios(TM)
+ * SpellByte
+ * 2013 (C) Thomas Gull
  *
- * Cube27 ResourceFileManager Class
+ * SpellByte ResourceFileManager Class
  *
  * This class manages the interface
- * between Ogre::Resource and Cube27 Resource Files
+ * between Ogre::Resource and SpellByte Resource Files
  *
  */
 
@@ -13,12 +13,12 @@
 #define _CRESFILEMANAGER_H_
 
 #include <OgreResourceManager.h>
-#include "CubeResourceFile.h"
+#include "SpellByteResourceFile.h"
 
 namespace SpellByte
 {
-    class Cube27ResFileManager : public Ogre::ResourceManager, public
-    Ogre::Singleton<Cube27ResFileManager>
+    class SBResFileManager : public Ogre::ResourceManager, public
+    Ogre::Singleton<SBResFileManager>
     {
     protected:
         // must implement from ResourceManager's interface
@@ -27,13 +27,13 @@ namespace SpellByte
                                    Ogre::ManualResourceLoader *loader, const Ogre::NameValuePairList *createParams);
 
     public:
-        Cube27ResFileManager();
-        virtual ~Cube27ResFileManager();
+        SBResFileManager();
+        virtual ~SBResFileManager();
 
-        virtual Cube27ResFilePtr load(const Ogre::String &name, const Ogre::String &group);
+        virtual SBResFilePtr load(const Ogre::String &name, const Ogre::String &group);
 
-        static Cube27ResFileManager &getSingleton();
-        static Cube27ResFileManager *getSingletonPtr();
+        static SBResFileManager &getSingleton();
+        static SBResFileManager *getSingletonPtr();
     };
 }
 

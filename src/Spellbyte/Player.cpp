@@ -14,6 +14,7 @@ namespace SpellByte
         moveScale = 0.0f;
         playerHeight = APP->getConfigFloat("height");
         moveSpeed = APP->getConfigFloat("speed");
+        collisionRadius = APP->getConfigFloat("player_radius");
         COMM->registerSubscriber("player", this);
     }
 
@@ -273,7 +274,7 @@ namespace SpellByte
         if(enabledCollision)
         {
             collisionHandler->calculateY(cameraNode,true,true,1.5f,1);
-            if (collisionHandler->collidesWithEntity(oldPos, cameraNode->getPosition(), 1.5f, -1.0f, -1))
+            if (collisionHandler->collidesWithEntity(oldPos, cameraNode->getPosition(), collisionRadius, -1.0f, -1))
             {
                 cameraNode->setPosition(oldPos);
             }

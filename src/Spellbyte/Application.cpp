@@ -1,6 +1,6 @@
 /*
- * Cube27
- * 2013 (C) Knightforge Studios(TM)
+ * SpellByte
+ * 2013 (C) Thomas Gull
  *
  * Application Class
  *
@@ -20,7 +20,6 @@
 #include "states/PauseState.h"
 #include "states/OptionsState.h"
 #include "states/PlayMenuState.h"
-#include "states/Editor.h"
 #include "ControlManager.h"
 
 namespace SpellByte
@@ -81,10 +80,10 @@ namespace SpellByte
             xmlManager = 0;
         }
 
-        if(c27Manager)
+        if(SBResourceManager)
         {
-            delete Ogre::ResourceGroupManager::getSingleton()._getResourceManager("Cube27ResourceFile");
-            c27Manager = 0;
+            delete Ogre::ResourceGroupManager::getSingleton()._getResourceManager("SBResourceFile");
+            SBResourceManager = 0;
         }
 
         if(OgreRoot)
@@ -215,6 +214,7 @@ namespace SpellByte
             }
         }
 
+        xmlFile->unload();
         return true;
     }
 
@@ -249,6 +249,7 @@ namespace SpellByte
             }
         }
 
+        xmlFile->unload();
         return true;
     }
 
@@ -300,7 +301,7 @@ namespace SpellByte
     {
         Ogre::LogManager* logMgr = new Ogre::LogManager();
 
-        Log = logMgr->getSingleton().createLog("OgreLogfile.log", true, true, false);
+        Log = logMgr->getSingleton().createLog("SpellByteLogfile.log", true, true, false);
         #ifdef _DEBUG
             Log->setDebugOutputEnabled(true);
         #else
@@ -310,7 +311,7 @@ namespace SpellByte
         #ifdef _DEBUG
             OgreRoot = new Ogre::Root("plugins_d.cfg");
         #else
-            OgreRoot = new Ogre::Root("plugins.cfg");
+            OgreRoot = new Ogre::Root("plugins.cfg", "spellbyte.cfg", "spellbyte.log");
         #endif
 
         //OgreRoot->restoreConfig();
@@ -319,10 +320,10 @@ namespace SpellByte
             return false;
         }
 
-        c27Manager = new Cube27ResFileManager();
+        SBResourceManager = new SBResFileManager();
         xmlManager = new XMLResourceManager();
 
-        Ogre::ResourceGroupManager::getSingleton().declareResource("cube.c27", "Cube27ResourceFile");
+        Ogre::ResourceGroupManager::getSingleton().declareResource("resource.spb", "SBResourceFile");
 
         RenderWindow = OgreRoot->initialise(true, wndTitle);
 
@@ -380,10 +381,10 @@ namespace SpellByte
         Ogre::TextureManager::getSingleton().setDefaultNumMipmaps(5);
 
         // Get resource file loaded first
-        Cube27ResFilePtr c27File = c27Manager->load("cube.c27", "Cube27Resource");
+        SBResFilePtr SBFile = SBResourceManager->load("resource.spb", "SpellByteResource");
         Ogre::ResourceGroupManager::getSingleton().initialiseAllResourceGroups();
 
-        c27File->load();
+        SBFile->load();
 
         Timer = new Ogre::Timer();
         Timer->reset();

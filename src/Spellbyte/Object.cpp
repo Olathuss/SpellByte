@@ -78,14 +78,20 @@ namespace SpellByte
             LOG("Loading mesh: " + meshFile);
             //MeshManager::getSingleton().load(mesh, groupName);
             //entity = SceneMgr->createEntity("ENT" + objectName + Ogre::StringConverter::toString(i), meshFile, groupName);
-            addEntity(meshFile, meshGroup);
+            Ogre::Entity* entity = addEntity(meshFile, meshGroup);
+            if(entity != NULL) {
+                const char* matName = meshElt->Attribute("material");
+                if(matName != NULL) {
+                    entity->setMaterialName(matName);
+                }
+            }
             //newObject->actorEntity->setCastShadows(castShadows);
             meshElt = meshElt->NextSiblingElement("mesh");
-
         }
         const int DEGREES = 0;
         const int RADIANS = 0;
         int rotateType = 0;
+        setYsnap(Y_TERRAIN);
         tinyxml2::XMLElement *settingElt = objElt->FirstChildElement("setting");
         if(settingElt)
         {
@@ -126,33 +132,35 @@ namespace SpellByte
         float x, y, z;
         x = y = z = 0.0;
         loadPosition(objElt, x, y, z);
-        ObjectNode->setPosition(x, y, z);
+        if (ysnap == Y_ABSOLUTE) {
+            ObjectNode->setPosition(x, y, z);
+        } else if (ysnap == Y_RELATIVE) {
+            y +=  WorldPtr->terrainGroup->getHeightAtWorldPosition(x, y, z);
+            ObjectNode->setPosition(x, y, z);
+        } else {
+            ObjectNode->setPosition(x, WorldPtr->terrainGroup->getHeightAtWorldPosition(x, y, z), z);
+        }
 
-        if(loadScale(objElt, x, y, z))
-        {
+        if (loadScale(objElt, x, y, z)) {
             ObjectNode->setScale(x, y, z);
         }
 
         float roll, pitch, yaw, qw, qx, qy, qz;
         roll = pitch = yaw = qw = qx = qy = qz = 0;
         int rotResult = loadRotate(objElt, roll, pitch, yaw, qw, qx, qy, qz);
-        if(rotResult == 2)
-        {
-            if(rotateType == DEGREES)
-            {
+        if(rotResult == 2) {
+            if(rotateType == DEGREES) {
                 ObjectNode->roll(Ogre::Radian(Ogre::Math::DegreesToRadians(roll)));
                 ObjectNode->pitch(Ogre::Radian(Ogre::Math::DegreesToRadians(pitch)));
                 ObjectNode->yaw(Ogre::Radian(Ogre::Math::DegreesToRadians(yaw)));
             }
-            else if(rotateType == RADIANS)
-            {
+            else if(rotateType == RADIANS) {
                 ObjectNode->roll(Ogre::Radian(roll));
                 ObjectNode->pitch(Ogre::Radian(pitch));
                 ObjectNode->yaw(Ogre::Radian(yaw));
             }
         }
-        else if(rotResult == 1)
-        {
+        else if(rotResult == 1) {
             Ogre::Quaternion rotQ = Ogre::Quaternion(qw, qx, qy, qz);
             ObjectNode->setOrientation(rotQ);
         }
@@ -160,21 +168,17 @@ namespace SpellByte
         return true;
     }
 
-    void Object::setYsnap(int newSnap)
-    {
+    void Object::setYsnap(int newSnap) {
         // snap to terrain by default
-        if(newSnap < Y_TERRAIN || newSnap >= Y_INVALID)
-        {
+        if(newSnap < Y_TERRAIN || newSnap >= Y_INVALID) {
             ysnap = Y_TERRAIN;
         }
-        else
-        {
+        else {
             ysnap = newSnap;
         }
     }
 
-    int Object::getYsnap()
-    {
+    int Object::getYsnap() {
         return ysnap;
     }
 
@@ -271,19 +275,21 @@ namespace SpellByte
         }
     }
 
-    bool Object::addEntity(std::string meshName, std::string groupName)
+    Ogre::Entity* Object::addEntity(std::string meshName, std::string groupName)
     {
         Ogre::String entityName = "ENT" + Ogre::StringConverter::toString(ID) + "_" + Ogre::StringConverter::toString(entityCount++);
+        Ogre::Entity *entity = NULL;
         try
         {
-            Ogre::Entity *entity = APP->SceneMgr->createEntity(entityName, meshName, groupName);
+            entity = APP->SceneMgr->createEntity(entityName, meshName, groupName);
+
             ObjectNode->attachObject(entity);
         }
         catch (Ogre::Exception &e)
         {
-            return false;
+            return NULL;
         }
-        return true;
+        return entity;
     }
 
     void Object::resetY()

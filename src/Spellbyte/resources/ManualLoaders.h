@@ -1,6 +1,6 @@
 /*
- * Cube27
- * 2013 (C) Knightforge Studios(TM)
+ * SpellByte
+ * 2013 (C) Thomas Gull
  *
  * Manual Loaders Classes
  *
@@ -14,7 +14,7 @@
 
 #include <iostream>
 #include "../stdafx.h"
-#include "CubeResourceFileManager.h"
+#include "SpellByteResourceFileManager.h"
 #include "XMLResource.h"
 #include "../SpellByte.h"
 
@@ -51,7 +51,7 @@ using namespace SpellByte;
         // Cast our Ogre::Resource object to a Mesh resource
         Ogre::Mesh *mesh = static_cast<Ogre::Mesh *>(meshRes);
         // Ensure the proper Resource File is loaded
-        Cube27ResFilePtr resPtr = Cube27ResFileManager::getSingleton().load(resFileName, "Cube27ResourceFile");
+        SBResFilePtr resPtr = SBResFileManager::getSingleton().load(resFileName, "SBResourceFile");
         // Get the name of our file
         size_t len = resPtr->getDataSize(mesh->getName());
         // Allocate proper memory to contain mesh data
@@ -103,7 +103,7 @@ using namespace SpellByte;
         // Cast our Ogre::Resource object to a Mesh resource
         XMLResource *xmlResource = static_cast<XMLResource *>(xmlRes);
         // Ensure the proper Resource File is loaded
-        Cube27ResFilePtr resPtr = Cube27ResFileManager::getSingleton().load(resFileName, "Cube27ResourceFile");
+        SBResFilePtr resPtr = SBResFileManager::getSingleton().load(resFileName, "SBResourceFile");
         // Get the name of our file
         size_t len = resPtr->getDataSize(xmlResource->getName());
         // Allocate proper memory to contain mesh data

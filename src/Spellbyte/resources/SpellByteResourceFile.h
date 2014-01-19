@@ -1,14 +1,14 @@
 /*
- * Cube27
- * 2013 (C) Knightforge Studios(TM)
+ * SpellByte
+ * 2013 (C) Thomas Gull
  *
- * Cube27 ResourceFile Class
+ * SpellByte ResourceFile Class
  *
  * This class manages the interface
- * between Ogre::Resource and Cube27 Resource Files
+ * between Ogre::Resource and SpellByte Resource Files
  *
  * This uses smart pointer, any time this resource is needed
- * use Cube27ResFilePtr to get smart pointer: then do not
+ * use SBResFilePtr to get smart pointer: then do not
  * delete!
  *
  */
@@ -25,7 +25,7 @@
 
 namespace SpellByte
 {
-    class Cube27ResFile : public Ogre::Resource
+    class SBResFile : public Ogre::Resource
      {
     protected:
         // must be implemented from Ogre::Resource interface
@@ -39,10 +39,10 @@ namespace SpellByte
         void init();
 
     public:
-        Cube27ResFile(Ogre::ResourceManager *creator, const Ogre::String &name,
+        SBResFile(Ogre::ResourceManager *creator, const Ogre::String &name,
                       Ogre::ResourceHandle handle, const Ogre::String &group,
                       bool isManual = false, Ogre::ManualResourceLoader *loader = 0);
-        virtual ~Cube27ResFile();
+        virtual ~SBResFile();
 
         // This method is here temporarily until new resource is created
         std::vector<unsigned char> decompress(int data_no) const;
@@ -72,7 +72,7 @@ namespace SpellByte
      };
 
      #pragma pack(1) // Ensure compiler does not use extra padding
-     struct Cube27ResFile::ResFileData
+     struct SBResFile::ResFileData
      {
          dword fileNameLen;
          Ogre::String fileName;
@@ -86,20 +86,20 @@ namespace SpellByte
 
     // Needed for Ogre3d, offers smart pointer to resource
     // Which allows for automatic garbage collection
-     class Cube27ResFilePtr : public Ogre::SharedPtr<Cube27ResFile>
+     class SBResFilePtr : public Ogre::SharedPtr<SBResFile>
      {
      public:
-        Cube27ResFilePtr() : Ogre::SharedPtr<Cube27ResFile>() {}
-        explicit Cube27ResFilePtr(Cube27ResFile *rep) : Ogre::SharedPtr<Cube27ResFile>(rep) {}
-        Cube27ResFilePtr(const Cube27ResFilePtr &r) : Ogre::SharedPtr<Cube27ResFile>(r) {}
-        Cube27ResFilePtr(const Ogre::ResourcePtr &r) : Ogre::SharedPtr<Cube27ResFile>()
+        SBResFilePtr() : Ogre::SharedPtr<SBResFile>() {}
+        explicit SBResFilePtr(SBResFile *rep) : Ogre::SharedPtr<SBResFile>(rep) {}
+        SBResFilePtr(const SBResFilePtr &r) : Ogre::SharedPtr<SBResFile>(r) {}
+        SBResFilePtr(const Ogre::ResourcePtr &r) : Ogre::SharedPtr<SBResFile>()
         {
             if(r.isNull())
                 return;
             // lock and copy other mutex pointer
             OGRE_LOCK_MUTEX(*r.OGRE_AUTO_MUTEX_NAME)
             OGRE_COPY_AUTO_SHARED_MUTEX(r.OGRE_AUTO_MUTEX_NAME)
-            pRep = static_cast<Cube27ResFile*>(r.getPointer());
+            pRep = static_cast<SBResFile*>(r.getPointer());
             pUseCount = r.useCountPointer();
             useFreeMethod = r.freeMethod();
             if(pUseCount)
@@ -108,10 +108,10 @@ namespace SpellByte
             }
         }
 
-        // Operator used to convert a ResourcePtr to Cube27ResFilePtr
-        Cube27ResFilePtr& operator=(const Ogre::ResourcePtr &r)
+        // Operator used to convert a ResourcePtr to SBResFilePtr
+        SBResFilePtr& operator=(const Ogre::ResourcePtr &r)
         {
-            if(pRep == static_cast<Cube27ResFile*>(r.getPointer()))
+            if(pRep == static_cast<SBResFile*>(r.getPointer()))
                  return *this;
              release();
              if( r.isNull() )
@@ -120,7 +120,7 @@ namespace SpellByte
              // lock & copy other mutex pointer
              OGRE_LOCK_MUTEX(*r.OGRE_AUTO_MUTEX_NAME)
              OGRE_COPY_AUTO_SHARED_MUTEX(r.OGRE_AUTO_MUTEX_NAME)
-             pRep = static_cast<Cube27ResFile*>(r.getPointer());
+             pRep = static_cast<SBResFile*>(r.getPointer());
              pUseCount = r.useCountPointer();
              useFreeMethod = r.freeMethod();
              if (pUseCount)

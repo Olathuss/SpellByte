@@ -5,7 +5,7 @@
 
 #include "stdafx.h"
 #include "StateManager.h"
-#include "./resources/CubeResourceFileManager.h"
+#include "./resources/SpellByteResourceFileManager.h"
 #include "./resources/XMLResourceManager.h"
 
 //#include "SpellByte.h"
@@ -86,7 +86,7 @@ namespace SpellByte
         Ogre::SceneManager *SceneMgr;
 
         // Resource related
-        Cube27ResFileManager *c27Manager;
+        SBResFileManager *SBResourceManager;
         XMLResourceManager *xmlManager;
 
         // CEGUI related

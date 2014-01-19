@@ -123,7 +123,7 @@ namespace SpellByte
         ~Object();
 
         // Add entity to object from Mesh
-        bool addEntity(std::string meshName, std::string groupName);
+        Ogre::Entity* addEntity(std::string meshName, std::string groupName);
 
         void setGroup(ObjectGroup *parent);
         ObjectGroup *getGroup() const;

@@ -1,8 +1,8 @@
 /*
- * Cube27
- * 2013 (C) Knightforge Studios(TM)
+ * SpellByte
+ * 2013 (C) Thomas Gull
  *
- * Cube27 XMLResourceManager Class
+ * SpellByte XMLResourceManager Class
  *
  * This class manages the interface
  * between Ogre::Resource and XML Files

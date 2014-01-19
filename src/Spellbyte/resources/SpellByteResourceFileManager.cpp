@@ -1,24 +1,24 @@
-#include "CubeResourceFileManager.h"
+#include "SpellByteResourceFileManager.h"
 
 namespace SpellByte
 {
-    template<> Cube27ResFileManager *Ogre::Singleton<Cube27ResFileManager>::msSingleton = 0;
+    template<> SBResFileManager *Ogre::Singleton<SBResFileManager>::msSingleton = 0;
 
-    Cube27ResFileManager *Cube27ResFileManager::getSingletonPtr()
+    SBResFileManager *SBResFileManager::getSingletonPtr()
     {
         return msSingleton;
     }
 
-    Cube27ResFileManager &Cube27ResFileManager::getSingleton()
+    SBResFileManager &SBResFileManager::getSingleton()
     {
         assert(msSingleton);
         return(*msSingleton);
     }
 
-    Cube27ResFileManager::Cube27ResFileManager()
+    SBResFileManager::SBResFileManager()
     {
         // tell Ogre what kind of ogre we use
-        mResourceType = "Cube27ResourceFile";
+        mResourceType = "SBResourceFile";
 
         // set priority level, low so it can reference other resources
         mLoadOrder = 30.0f;
@@ -27,15 +27,15 @@ namespace SpellByte
         Ogre::ResourceGroupManager::getSingleton()._registerResourceManager(mResourceType, this);
     }
 
-    Cube27ResFileManager::~Cube27ResFileManager()
+    SBResFileManager::~SBResFileManager()
     {
         // Unregister with ogre
         Ogre::ResourceGroupManager::getSingleton()._unregisterResourceManager(mResourceType);
     }
 
-    Cube27ResFilePtr Cube27ResFileManager::load(const Ogre::String &name, const Ogre::String &group)
+    SBResFilePtr SBResFileManager::load(const Ogre::String &name, const Ogre::String &group)
     {
-        Cube27ResFilePtr resf = getByName(name);
+        SBResFilePtr resf = getByName(name);
 
         if(resf.isNull())
             resf = create(name, group);
@@ -44,10 +44,10 @@ namespace SpellByte
         return resf;
     }
 
-    Ogre::Resource *Cube27ResFileManager::createImpl(const Ogre::String &name, Ogre::ResourceHandle handle,
+    Ogre::Resource *SBResFileManager::createImpl(const Ogre::String &name, Ogre::ResourceHandle handle,
                                                      const Ogre::String &group, bool isManual,
                                                      Ogre::ManualResourceLoader *loader, const Ogre::NameValuePairList *createParams)
     {
-        return new Cube27ResFile(this, name, handle, group, isManual, loader);
+        return new SBResFile(this, name, handle, group, isManual, loader);
     }
 }

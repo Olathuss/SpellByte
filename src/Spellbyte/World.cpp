@@ -34,7 +34,20 @@ namespace SpellByte
         Ogre::Plane plane(Ogre::Vector3::UNIT_Y, 0);
 
         Ogre::MeshManager::getSingleton().createPlane("ground", Ogre::ResourceGroupManager::DEFAULT_RESOURCE_GROUP_NAME,
-                                                        plane, 1500, 1500, 20, 20, true, 1, 5, 5, Ogre::Vector3::UNIT_Z);
+                                                        plane, 1500, 1500, 20, 20, true, 1, 1, 5, Ogre::Vector3::UNIT_Z);
+
+        // create a water plane/scene node
+        nWaterPlane.normal = Vector3::UNIT_Y;
+        nWaterPlane.d = -1.5;
+        MeshManager::getSingleton().createPlane(
+            "WaterPlane",
+            ResourceGroupManager::DEFAULT_RESOURCE_GROUP_NAME,
+            nWaterPlane,
+            8000, 8000,
+            20, 20,
+            true, 1,
+            1, 1,
+            Vector3::UNIT_Z);
 
         terrainGlobals = NULL;
         terrainGroup = NULL;
@@ -283,7 +296,7 @@ namespace SpellByte
 
         terrainGlobals = OGRE_NEW Ogre::TerrainGlobalOptions();
 
-        terrainGroup = OGRE_NEW Ogre::TerrainGroup(SceneMgr, Ogre::Terrain::ALIGN_X_Z, APP->getConfigFloat("heightmapsize") + 1, 12000.0f);
+        terrainGroup = OGRE_NEW Ogre::TerrainGroup(SceneMgr, Ogre::Terrain::ALIGN_X_Z, APP->getConfigFloat("heightmapsize") + 1, APP->getConfigFloat("worldsize"));
         terrainGroup->setFilenameConvention(Ogre::String("SpellByteTerrain"), Ogre::String("dat"));
         terrainGroup->setOrigin(mapwidth * Ogre::Vector3(APP->getConfigFloat("heightmapsize") / 2, 0, mapheight * APP->getConfigFloat("heightmapsize") / 2));
         //terrainGroup->setOrigin(Ogre::Vector3::ZERO);
@@ -313,6 +326,15 @@ namespace SpellByte
 
     void World::createScene()
     {
+        // create a water plane/scene node
+        pWaterEntity = SceneMgr->createEntity("water", "WaterPlane");
+        pWaterEntity->setMaterialName(APP->getConfigString("WaterMat"));
+        SceneNode *waterNode = SceneMgr->getRootSceneNode()->createChildSceneNode("WaterNode");
+        waterNode->attachObject(pWaterEntity);
+        waterNode->translate(0, APP->getConfigFloat("WaterHeight"), 0);
+
+        //DotSceneLoader *dsl = new DotSceneLoader();
+        //dsl->parseDotScene("city.scene", "City", SceneMgr);
         /*goatNode = SceneMgr->getRootSceneNode()->createChildSceneNode("goat");
         Ogre::DotSceneLoader *dsl = new Ogre::DotSceneLoader();
         dsl->parseDotScene("goat.scene", "Test", SceneMgr, goatNode);
@@ -323,9 +345,8 @@ namespace SpellByte
         LOG("Anim length: " + Ogre::StringConverter::toString(goatAnimState->getLength()));
         delete dsl;*/
 
-
         //manNode->pitch(Ogre::Radian(90));
-       /* Ogre::AnimationStateSet *animSet = ent->getAllAnimationStates();
+        /*Ogre::AnimationStateSet *animSet = ent->getAllAnimationStates();
         Ogre::AnimationStateIterator iter = animSet->getAnimationStateIterator();
         while(iter.hasMoreElements())
         {
@@ -335,12 +356,19 @@ namespace SpellByte
         manAnimState->setLoop(true);
         manAnimState->setEnabled(true);*/
 
-        /*Ogre::Entity *ent = SceneMgr->createEntity("male", "MedBaseMaleApril2013.mesh");
+        /*Ogre::Entity *ent = SceneMgr->createEntity("male", "NoNameMat0.mesh");
         manNode = SceneMgr->getRootSceneNode()->createChildSceneNode("male");
         manNode->attachObject(ent);
-        manNode->setScale(0.01, 0.01, 0.01);
+        manNode->setScale(10, 10, 10);
 
-        std::vector<Ogre::String> entParts;
+        Ogre::AnimationStateSet *animSet = ent->getAllAnimationStates();
+        Ogre::AnimationStateIterator iter = animSet->getAnimationStateIterator();
+        while(iter.hasMoreElements())
+        {
+            LOG("Animation name: " + iter.getNext()->getAnimationName());
+        }*/
+
+        /*std::vector<Ogre::String> entParts;
         entParts.push_back("BaseArms");
         entParts.push_back("BaseHands");
         entParts.push_back("BaseHairC");
@@ -350,9 +378,9 @@ namespace SpellByte
         entParts.push_back("ThiefHood");
         entParts.push_back("ThiefTorso");
         entParts.push_back("ThiefTrousers_MinerMeshExchange_");
-        entParts.push_back("MinerBoots");
-        //entParts.push_back("FarmerTorso");
-        for(unsigned int i = 0; i < ent->getNumSubEntities(); ++i)
+        entParts.push_back("MinerBoots");*/
+        //entParts.push_back("FarmerTorso");das
+        /*for(unsigned int i = 0; i < ent->getNumSubEntities(); ++i)
         {
             Ogre::SubEntity *sEnt;
             sEnt = ent->getSubEntity(i);
@@ -363,15 +391,36 @@ namespace SpellByte
             Ogre::SubEntity *sEnt;
             sEnt = ent->getSubEntity(entParts[i]);
             sEnt->setVisible(true);
-        }
-        manNode->setPosition(0, terrainGroup->getHeightAtWorldPosition(0, 0, 0), 0);
-        manAnimState = ent->getAnimationState("GENSneaking");
+        }*/
+        /*manNode->setPosition(0, terrainGroup->getHeightAtWorldPosition(0, 0, 0), 0);
+        manAnimState = ent->getAnimationState("default_skl");
         manAnimState->setLoop(true);
         manAnimState->setEnabled(true);*/
     }
 
     void World::update(const Ogre::FrameEvent &evt)
     {
+        /* Update Water */
+        float fWaterFlow = FLOW_SPEED * evt.timeSinceLastFrame;
+        static float fFlowAmount = 0.0f;
+        static bool fFlowUp = true;
+        SceneNode *pWaterNode = static_cast<SceneNode*>(
+            Camera->getSceneManager()->getRootSceneNode()->getChild("WaterNode"));
+        if(pWaterNode)
+        {
+            if(fFlowUp)
+                fFlowAmount += fWaterFlow;
+            else
+                fFlowAmount -= fWaterFlow;
+
+            if(fFlowAmount >= FLOW_HEIGHT)
+                fFlowUp = false;
+            else if(fFlowAmount <= 0.0f)
+                fFlowUp = true;
+
+            pWaterNode->translate(0, (fFlowUp ? fWaterFlow : -fWaterFlow), 0);
+        }
+
         //goatAnimState->addTime(evt.timeSinceLastFrame);
         //manAnimState->addTime(evt.timeSinceLastFrame);
         /*if(manAnimState->getAnimationName() == "NPCSitDown" && manAnimState->hasEnded()) {
@@ -528,7 +577,7 @@ namespace SpellByte
 
         Ogre::Terrain::ImportData &defaultimp = terrainGroup->getDefaultImportSettings();
         defaultimp.terrainSize = APP->getConfigFloat("heightmapsize") + 1;
-        defaultimp.worldSize = 12000.0f;
+        defaultimp.worldSize = APP->getConfigFloat("worldsize");
         defaultimp.inputScale = APP->getConfigFloat("inputscale"); // due terrain.png is 8 bpp
         defaultimp.minBatchSize = 33;
         defaultimp.maxBatchSize = 65;
@@ -536,14 +585,14 @@ namespace SpellByte
         // textures
         defaultimp.layerList.resize(3);
         defaultimp.layerList[0].worldSize = 5;
-        defaultimp.layerList[0].textureNames.push_back("dirt_grayrocky_diffusespecular.dds");
-        defaultimp.layerList[0].textureNames.push_back("dirt_grayrocky_normalheight.dds");
+        defaultimp.layerList[0].textureNames.push_back("wildgrass_4_seamless_1024.jpg");
+        defaultimp.layerList[0].textureNames.push_back("wildgrass_4_seamless_1024.jpg");
         defaultimp.layerList[1].worldSize = 2;
         defaultimp.layerList[1].textureNames.push_back("cgrass1.jpg");
         defaultimp.layerList[1].textureNames.push_back("cgrass1.jpg");
         defaultimp.layerList[2].worldSize = 1;
-        defaultimp.layerList[2].textureNames.push_back("wildgrass_4_seamless_1024.jpg");
-        defaultimp.layerList[2].textureNames.push_back("wildgrass_4_seamless_1024.jpg");
+        defaultimp.layerList[2].textureNames.push_back("cgrass1.jpg");
+        defaultimp.layerList[2].textureNames.push_back("cgrass1.jpg");
     }
 
     void World::destroyScene()

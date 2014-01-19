@@ -9,6 +9,9 @@
 #include "Player.h"
 #include "ObjectGroup.h"
 
+#define FLOW_SPEED 0.4
+#define FLOW_HEIGHT 5
+
 namespace SpellByte
 {
     class World
@@ -97,5 +100,9 @@ namespace SpellByte
         std::vector<Object*> WorldObjects;
 
         MOC::CollisionTools *GameCollisionTools;
+
+        // Water
+        Entity *pWaterEntity;
+        Plane nWaterPlane;
     };
 }
