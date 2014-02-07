@@ -7,14 +7,12 @@
 
 #define ActorMgr ActorManager::getSingletonPtr()
 
-namespace SpellByte
-{
+namespace SpellByte {
     class Actor;
     class ActorPtr;
 
     // Ogre Singleton Type
-    class ActorManager : public Ogre::Singleton<ActorManager>
-    {
+    class ActorManager : public Ogre::Singleton<ActorManager> {
     private:
         // Use map to relate actor ID with its pointer
         typedef std::map<const int, Actor*> ActorMapType;
@@ -40,8 +38,7 @@ namespace SpellByte
         void removeActor(Actor *newActor);
 
         // clears all entities from the Actor map
-        void reset()
-        {
+        void reset() {
             ActorMap.clear();
         }
     };

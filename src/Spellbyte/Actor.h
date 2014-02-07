@@ -4,19 +4,22 @@
 #include <map>
 #include "stdafx.h"
 #include "Object.h"
-// Define unique ID for component type
 
-namespace SpellByte
-{
+namespace SpellByte {
+    // Define unique ID for component type
     typedef int ActorID;
+
+    // Telegram for Actor communication
     struct Telegram;
     class ActorPtr;
+
     // each component has a type, each Actor
     // should only have one of any component type
     typedef int componentType;
 
-    class Actor
-    {
+    class Actor {
+
+    // Allow ActorFactory to access any data of Actor
     friend class ActorFactory;
     typedef std::map<componentType, ComponentPtr> ActorComponents;
 
@@ -58,10 +61,10 @@ namespace SpellByte
         void detachComponent(componentType type);
 
         // Update components
-        void update();
+        void update(const Ogre::FrameEvent &evt);
 
         // Update component type
-        void updateComponent(componentType);
+        bool updateComponent(componentType);
 
         // entities handle messages, pass telegram to each component
         void handleMessage(const Telegram &msg);
