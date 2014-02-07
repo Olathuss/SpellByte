@@ -35,7 +35,7 @@ namespace SpellByte
         void exit();
         void resume();
 
-        void update(const Ogre::FrameEvent &evt);
+        bool update(const Ogre::FrameEvent &evt);
         void handleEvents();
 
         void buildGUI();

@@ -16,7 +16,7 @@
 #include "../stdafx.h"
 #include "SpellByteResourceFileManager.h"
 #include "XMLResource.h"
-#include "../SpellByte.h"
+#include "../define.h"
 
 using namespace SpellByte;
 

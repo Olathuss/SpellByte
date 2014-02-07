@@ -8,15 +8,26 @@
 #include "./utilities/tinyxml2.h"
 #include "Player.h"
 #include "ObjectGroup.h"
+#include "world/WaterMesh.h"
+#include "world/Water.h"
 
 #define FLOW_SPEED 0.4
 #define FLOW_HEIGHT 5
+#define RAIN_HEIGHT_RANDOM 5
+#define RAIN_HEIGHT_CONSTANT 5
+
+#define MAJOR_SUPPORT 1
+#define MINOR_SUPPORT 0
 
 namespace SpellByte
 {
     class World
     {
     public:
+        enum COLLISION_MASK {
+            NONE = 1<<0,
+            STATIC = 1<<1,
+        };
         Ogre::TerrainGroup *terrainGroup;
 
         World();
@@ -32,9 +43,19 @@ namespace SpellByte
         void createScene();
         void destroyScene();
 
+        int getMaskFromString(std::string maskType) {
+            if (maskType == "NONE") {
+                return COLLISION_MASK::NONE;
+            } else if (maskType == "STATIC") {
+                return COLLISION_MASK::STATIC;
+            } else {
+                return COLLISION_MASK::NONE;
+            }
+        }
+
         bool reload();
 
-        void update(const Ogre::FrameEvent &evt);
+        bool update(const Ogre::FrameEvent &evt);
         void handleEvent(int event);
 
         // set collision tools
@@ -43,18 +64,38 @@ namespace SpellByte
             GameCollisionTools = collisionTool;
         }
 
-    private:
+        virtual void loadData(tinyxml2::XMLElement *dataElt);
+        // Get config float setting
+        const float getDataFloat(std::string ID) const;
 
-        void loadTerrain();
-        void loadObjects(tinyxml2::XMLDocument *worldDoc);
+    private:
+        struct Layer {
+            Ogre::Real worldSize;
+            Ogre::String diffuse;
+            Ogre::String normal;
+        };
+        typedef std::vector<WaterCircle*> WaterCircles;
+        void loadTerrain(tinyxml2::XMLElement *terrainElt);
+        void loadObjects(tinyxml2::XMLElement *worldElt);
         void processGroup(tinyxml2::XMLElement *groupElt, ObjectFactory *objFactory, Ogre::SceneNode *grpNode = NULL);
         void loadIndependentObjects(tinyxml2::XMLElement *elt, ObjectFactory *objFactory);
+        void processCircles(Real timeSinceLastFrame);
+        void processParticles();
 
         // Clear World
         void clearWorld();
 
         // Bind world API to LUA
         void bindToLUA();
+
+        /* Water */
+        WaterMesh *waterMesh;
+        Ogre::Entity *waterEntity;
+        Ogre::AnimationState* waterAnim;
+        Ogre::Overlay* waterOverlay;
+        Ogre::ParticleSystem *waterParticleSystem;
+        Ogre::ParticleEmitter *waterParticleEmitter;
+        WaterCircles circles;
 
         Ogre::SceneManager *SceneMgr;
         Ogre::SceneNode *goatNode;
@@ -92,7 +133,6 @@ namespace SpellByte
         int mapwidth;
         int mapheight;
         bool multi_terrain;
-        std::vector<Ogre::String> heightMaps;
         Ogre::SceneNode *objectsNode;
         // For groups and their groups/objects
         std::vector<ObjectGroup*> WorldGroups;
@@ -101,8 +141,10 @@ namespace SpellByte
 
         MOC::CollisionTools *GameCollisionTools;
 
-        // Water
-        Entity *pWaterEntity;
-        Plane nWaterPlane;
+        std::vector<Ogre::String> heightMaps;
+        std::vector<Layer> terrainLayers;
+        std::map<std::string, float> worldFloats;
+        int worldVersionMajor;
+        int worldVersionMinor;
     };
 }

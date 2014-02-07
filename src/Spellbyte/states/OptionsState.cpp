@@ -9,7 +9,7 @@
  */
 
  #include "OptionsState.h"
- #include "../SpellByte.h"
+ #include "../define.h"
 
  namespace SpellByte
  {
@@ -139,13 +139,15 @@
         }
     }
 
-    void OptionsState::update(const Ogre::FrameEvent &evt)
+    bool OptionsState::update(const Ogre::FrameEvent &evt)
     {
         if(Quit == true)
         {
             Parent->shutDown();
-            return;
+            return false;
         }
+
+        return true;
     }
 
     bool OptionsState::buttonClicked(const CEGUI::EventArgs &evt)

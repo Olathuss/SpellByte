@@ -5,10 +5,9 @@
 #include <map>
 #include "utilities/tinyxml2.h"
 #include "stdafx.h"
-// Define unique ID for component type
 
-namespace SpellByte
-{
+namespace SpellByte {
+
     class World;
     typedef int ObjectID;
     struct Telegram;
@@ -17,18 +16,15 @@ namespace SpellByte
     // should only have one of any component type
     typedef int componentType;
 
-    class BaseComponent
-    {
+    class BaseComponent {
     protected:
         ObjectPtr *owner;
     public:
-        BaseComponent(ObjectPtr *owningObject):owner(owningObject)
-        {
+        BaseComponent(ObjectPtr *owningObject):owner(owningObject) {
             // empty
         }
 
-        virtual ~BaseComponent()
-        {
+        virtual ~BaseComponent() {
             // Do not delete owner, just lose reference to it
             // Manager should delete the object
             if(owner)
@@ -41,8 +37,7 @@ namespace SpellByte
     };
 
     // Smart pointer for component
-    class ComponentPtr : public Ogre::SharedPtr<BaseComponent>
-    {
+    class ComponentPtr : public Ogre::SharedPtr<BaseComponent> {
     public:
         ComponentPtr() : Ogre::SharedPtr<BaseComponent>() {}
         explicit ComponentPtr(BaseComponent *rep) : Ogre::SharedPtr<BaseComponent>(rep) {}
@@ -50,15 +45,13 @@ namespace SpellByte
     };
 
     class ObjectGroup;
-    class Object : public Ogre::Any
-    {
+    class Object : public Ogre::Any {
     friend class ObjectFactory;
     typedef std::map<componentType, ComponentPtr> ObjectComponents;
 
     public:
     private:
-        enum Y_SNAP
-        {
+        enum Y_SNAP {
             // Snap to terrain
             Y_TERRAIN,
             // Snap relative to terrain
@@ -93,6 +86,8 @@ namespace SpellByte
 
         int ysnap;
 
+        std::map<std::string, std::string> meshMaterials;
+
     protected:
         // all components for Object
         ObjectComponents components;
@@ -113,8 +108,7 @@ namespace SpellByte
     public:
         Object();
         Object(ObjectID id);
-        bool operator==(const Object &rhs)
-        {
+        bool operator==(const Object &rhs) {
             return ID == rhs.ID;
         }
         bool init(tinyxml2::XMLElement *objElt, Ogre::SceneNode *parentNode = NULL);
@@ -130,8 +124,7 @@ namespace SpellByte
 
         Ogre::SceneNode *getNode() const;
 
-        const std::string getName()
-        {
+        const std::string getName() {
             return ObjectName;
         }
 
@@ -139,7 +132,7 @@ namespace SpellByte
 
         // set object's ysnap, used when setting object's position
         void setYsnap(int newSnap);
-        int getYsnap();
+        const int getYsnap() const;
 
         void resetY();
         void setPosition(Ogre::Real x, Ogre::Real y, Ogre::Real z);
@@ -165,10 +158,10 @@ namespace SpellByte
         void detachComponent(componentType type);
 
         // Update components
-        virtual void update();
+        virtual void update(const Ogre::FrameEvent &evt);
 
         // Update component type
-        void updateComponent(componentType);
+        bool updateComponent(componentType);
 
         // entities handle messages, pass telegram to each component
         virtual void handleMessage(const Telegram &msg);
@@ -182,16 +175,14 @@ namespace SpellByte
         // reset entities next id
         static void resetNextValidID();
 
-        virtual int getID() const
-        {
+        virtual int getID() const {
             return ID;
         }
     };
 
     // Use smart pointer for entities
     // Which allows for automatic garbage collection
-    class ObjectPtr : public Ogre::SharedPtr<Object>
-    {
+    class ObjectPtr : public Ogre::SharedPtr<Object> {
     public:
         ObjectPtr() : Ogre::SharedPtr<Object>() {}
         explicit ObjectPtr(Object *rep) : Ogre::SharedPtr<Object>(rep) {}

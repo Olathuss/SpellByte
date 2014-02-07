@@ -36,7 +36,7 @@ namespace SpellByte
 
         virtual BaseState* findByName(Ogre::String stateName);
 
-        virtual void update(const Ogre::FrameEvent &evt);
+        virtual bool update(const Ogre::FrameEvent &evt);
         virtual void handleEvents();
 
         void changeState(BaseState *state);

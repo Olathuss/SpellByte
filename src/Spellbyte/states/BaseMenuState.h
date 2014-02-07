@@ -36,7 +36,7 @@ namespace SpellByte
         virtual void exit(){};
         virtual void resume(){};
 
-        virtual void update(double timeSinceLastFrame){};
+        virtual bool update(const Ogre::FrameEvent &evt){return true;};
         virtual void handleEvents(){};
 
         virtual void buildGUI(){};

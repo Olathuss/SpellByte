@@ -9,7 +9,7 @@
  */
 
  #include "MenuState.h"
- #include "../SpellByte.h"
+ #include "../define.h"
 
  namespace SpellByte
  {
@@ -48,22 +48,24 @@
         // Tell the application this camera is going to be the one for the viewport
         APP->Viewport->setCamera(Camera);
 
+        wRoot = NULL;
+        CEGUI::WindowManager &wmgr = CEGUI::WindowManager::getSingleton();
+        wRoot = wmgr.createWindow("DefaultWindow", "root");
+        APP->ceguiContext->setRootWindow( wRoot );
+        APP->ceguiContext->getMouseCursor().show();
+
         // Create the scene as is necessary
         createScene();
      }
 
-     void MenuState::createScene()
-     {
-
+     void MenuState::createScene() {
         buildGUI();
      }
 
-     void MenuState::buildGUI()
-     {
+     void MenuState::buildGUI() {
+        LOG("Creating Menu");
         // Create root window from window manager
         CEGUI::WindowManager &wmgr = CEGUI::WindowManager::getSingleton();
-        CEGUI::Window *wRoot = wmgr.createWindow("DefaultWindow", "root");
-        APP->ceguiContext->setRootWindow( wRoot );
 
         // Below is just here for testing purposes
         /*CEGUI::FrameWindow *fWnd = static_cast<CEGUI::FrameWindow*>(wmgr.createWindow("TaharezLook/FrameWindow", "testWindow"));
@@ -79,7 +81,7 @@
         // For button positioning, UDim has two values: the first is for scale value (0 to 1.0),
         // and the second is for offset in pixel value.  In other words, UDim(relative, absolute)
         // So this needs to be changed depending on which one we want to use
-        for(int i = 0; i < BTN_END; ++i)
+        for (int i = 0; i < BTN_END; ++i)
         {
            CEGUI::Window *button = wmgr.createWindow("TaharezLook/Button", getButtonID(i));
            button->setText(getButtonText(i));
@@ -91,15 +93,19 @@
            btn_current_y += BUTTON_Y_OFFSET;
            btn_current_x += BUTTON_X_OFFSET;
         }
+        LOG("Menu Created");
      }
 
     void MenuState::exit()
     {
+        APP->ceguiContext->getMouseCursor().hide();
+
         // Exit menu state
         APP->Log->logMessage("MenuState: exit");
 
         // Destroy state's CEGUI widgets
         CEGUI::WindowManager::getSingleton().destroyAllWindows();
+        wRoot = NULL;
 
         // Destroy the camera so next state can create its own camera
         SceneMgr->destroyCamera(Camera);
@@ -120,13 +126,15 @@
         }
     }
 
-    void MenuState::update(const Ogre::FrameEvent &evt)
+    bool MenuState::update(const Ogre::FrameEvent &evt)
     {
         if(Quit == true)
         {
             Parent->shutDown();
-            return;
+            return false;
         }
+
+        return true;
     }
 
     bool MenuState::buttonClicked(const CEGUI::EventArgs &evt)
@@ -148,7 +156,7 @@
         {
             Quit = true;
             return true;
-        }
+             }
         return false;
     }
 
@@ -169,5 +177,7 @@
         buildGUI();
 
         APP->Viewport->setCamera(Camera);
+
+        APP->ceguiContext->getMouseCursor().show();
     }
  }

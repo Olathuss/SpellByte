@@ -35,7 +35,7 @@ namespace SpellByte
         void exit();
         void resume();
 
-        virtual void update(const Ogre::FrameEvent &evt);
+        virtual bool update(const Ogre::FrameEvent &evt);
         virtual void handleEvents();
 
         void buildGUI();
@@ -52,6 +52,8 @@ namespace SpellByte
         const float BUTTON_X_OFFSET;
         const float BUTTON_POSITION_START_Y;
         const float BUTTON_Y_OFFSET;
+
+        CEGUI::Window *wRoot;
     };
 }
 

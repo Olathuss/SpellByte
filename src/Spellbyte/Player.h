@@ -74,6 +74,7 @@ namespace SpellByte
         void moveCamera();
 
         float collisionRadius;
+        int collisionMask;
 
         World *GameWorld;
     };

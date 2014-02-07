@@ -9,7 +9,7 @@
  */
 
  #include "PauseState.h"
- #include "../SpellByte.h"
+ #include "../define.h"
 
  namespace SpellByte
  {
@@ -47,6 +47,8 @@
 
         // Tell the application this camera is going to be the one for the viewport
         APP->Viewport->setCamera(Camera);
+
+        APP->ceguiContext->getMouseCursor().show();
 
         // Create the scene as is necessary
         createScene();
@@ -90,6 +92,8 @@
         // Exit Pause state
         APP->Log->logMessage("PauseState: exit");
 
+        APP->ceguiContext->getMouseCursor().hide();
+
         // Destroy state's CEGUI widgets
         CEGUI::WindowManager::getSingleton().destroyAllWindows();
 
@@ -113,13 +117,15 @@
         }
     }
 
-    void PauseState::update(const Ogre::FrameEvent &evt)
+    bool PauseState::update(const Ogre::FrameEvent &evt)
     {
         if(Quit == true)
         {
             Parent->shutDown();
-            return;
+            return false;
         }
+
+        return true;
     }
 
     bool PauseState::buttonClicked(const CEGUI::EventArgs &evt)
@@ -159,6 +165,8 @@
         buildGUI();
 
         APP->Viewport->setCamera(Camera);
+
+        APP->ceguiContext->getMouseCursor().show();
     }
  }
 

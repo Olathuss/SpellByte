@@ -18,15 +18,12 @@
 
 #define CONTROL ControlManager::getInstance()
 
-namespace SpellByte
-{
+namespace SpellByte {
     // class to handle events
-    class UserEvent
-    {
+    class UserEvent {
     public:
         // ENUM to describe different input cases
-        enum
-        {
+        enum {
             START = 0,
             ESCAPE,
             TERMINAL,
@@ -39,6 +36,8 @@ namespace SpellByte
             MOUSE_OTHER_RELEASE,
             MOUSE_RELEASE,
             MOUSE_MOVE,
+            CYCLE_POLYGON_MODE,
+            CYCLE_AFILTER_MODE,
             WORLD_ACTION_START,
             RELOAD,
             AMBIENT_LIGHT_UP_ON,
@@ -69,6 +68,7 @@ namespace SpellByte
             PLAYER_ACTION_END,
             END
         };
+
         UserEvent(int nType);
         ~UserEvent(){};
         // Get name of event
@@ -86,13 +86,11 @@ namespace SpellByte
         // Set relative mouse X/Y
         void setRel(const int &x, const int &y);
 
-        void setWidth(const int &w)
-        {
+        void setWidth(const int &w) {
             width = w;
         };
 
-        void setHeight(const int &h)
-        {
+        void setHeight(const int &h) {
             height = h;
         };
 
@@ -111,8 +109,7 @@ namespace SpellByte
         int type;
     };
 
-    class ControlManager
-    {
+    class ControlManager {
     public:
         // Returns singleton instance
         static ControlManager* getInstance();
@@ -128,8 +125,7 @@ namespace SpellByte
 
         void shutDown();
 
-        int EventCount()
-        {
+        int EventCount() {
             return EventQueue.size();
         };
 

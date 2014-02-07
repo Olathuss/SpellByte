@@ -23,10 +23,8 @@
  typedef unsigned short word;
  typedef unsigned char byte;
 
-namespace SpellByte
-{
-    class SBResFile : public Ogre::Resource
-     {
+namespace SpellByte {
+    class SBResFile : public Ogre::Resource {
     protected:
         // must be implemented from Ogre::Resource interface
         // Loads resource file
@@ -55,10 +53,8 @@ namespace SpellByte
     private:
         // Structs for resource file information
         #pragma pack(1)
-        struct ResFileHeader
-        {
-             enum
-             {
+        struct ResFileHeader {
+             enum {
                  SIGNATURE = 0x52373243
              };
              dword sig;
@@ -72,8 +68,7 @@ namespace SpellByte
      };
 
      #pragma pack(1) // Ensure compiler does not use extra padding
-     struct SBResFile::ResFileData
-     {
+     struct SBResFile::ResFileData {
          dword fileNameLen;
          Ogre::String fileName;
          word dataFormat;
@@ -86,15 +81,13 @@ namespace SpellByte
 
     // Needed for Ogre3d, offers smart pointer to resource
     // Which allows for automatic garbage collection
-     class SBResFilePtr : public Ogre::SharedPtr<SBResFile>
-     {
+     class SBResFilePtr : public Ogre::SharedPtr<SBResFile> {
      public:
         SBResFilePtr() : Ogre::SharedPtr<SBResFile>() {}
         explicit SBResFilePtr(SBResFile *rep) : Ogre::SharedPtr<SBResFile>(rep) {}
         SBResFilePtr(const SBResFilePtr &r) : Ogre::SharedPtr<SBResFile>(r) {}
-        SBResFilePtr(const Ogre::ResourcePtr &r) : Ogre::SharedPtr<SBResFile>()
-        {
-            if(r.isNull())
+        SBResFilePtr(const Ogre::ResourcePtr &r) : Ogre::SharedPtr<SBResFile>() {
+            if (r.isNull())
                 return;
             // lock and copy other mutex pointer
             OGRE_LOCK_MUTEX(*r.OGRE_AUTO_MUTEX_NAME)
@@ -102,19 +95,17 @@ namespace SpellByte
             pRep = static_cast<SBResFile*>(r.getPointer());
             pUseCount = r.useCountPointer();
             useFreeMethod = r.freeMethod();
-            if(pUseCount)
-            {
+            if (pUseCount) {
                 ++(*pUseCount);
             }
         }
 
         // Operator used to convert a ResourcePtr to SBResFilePtr
-        SBResFilePtr& operator=(const Ogre::ResourcePtr &r)
-        {
-            if(pRep == static_cast<SBResFile*>(r.getPointer()))
+        SBResFilePtr& operator=(const Ogre::ResourcePtr &r) {
+            if (pRep == static_cast<SBResFile*>(r.getPointer()))
                  return *this;
              release();
-             if( r.isNull() )
+             if ( r.isNull() )
                  return *this;
                  // resource ptr is null, so the call to release above has done all we need to do.
              // lock & copy other mutex pointer
@@ -123,8 +114,7 @@ namespace SpellByte
              pRep = static_cast<SBResFile*>(r.getPointer());
              pUseCount = r.useCountPointer();
              useFreeMethod = r.freeMethod();
-             if (pUseCount)
-             {
+             if (pUseCount) {
                  ++(*pUseCount);
              }
              return *this;

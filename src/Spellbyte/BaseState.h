@@ -13,12 +13,10 @@
 
 #include "stdafx.h"
 
-namespace SpellByte
-{
+namespace SpellByte {
     class BaseState;
 
-    class StateListener
-    {
+    class StateListener {
     public:
         StateListener(){};
         virtual ~StateListener(){};
@@ -34,8 +32,7 @@ namespace SpellByte
         virtual void            popAllAndPushAppState(BaseState *state) = 0;
     };
 
-    class BaseState
-    {
+    class BaseState {
     public:
         virtual ~BaseState(){};
 
@@ -56,38 +53,33 @@ namespace SpellByte
         virtual void handleEvents() = 0;
 
         // This method is run during the main loop to update various game information
-        virtual void update(const Ogre::FrameEvent &evt) = 0;
+        virtual bool update(const Ogre::FrameEvent &evt) = 0;
 
     protected:
         BaseState() {};
 
         // Find state by Ogre::String name
-        BaseState* findByName(Ogre::String stateName)
-        {
+        BaseState* findByName(Ogre::String stateName) {
             return Parent->findByName(stateName);
         };
 
         // Changes current game state
-        void changeState(BaseState *newState)
-        {
+        void changeState(BaseState *newState) {
             Parent->changeState(newState);
         };
 
         // Pushes new game state onto the stack
-        bool pushState(BaseState *newState)
-        {
+        bool pushState(BaseState *newState) {
             return Parent->pushState(newState);
         };
 
         // Pops game state off the stack
-        void popState()
-        {
+        void popState() {
             Parent->popState();
         };
 
         // Pops all states and push new state onto stack
-        void popAllAndPushState(BaseState *newState)
-        {
+        void popAllAndPushState(BaseState *newState) {
             Parent->popAllAndPushAppState(newState);
         };
 

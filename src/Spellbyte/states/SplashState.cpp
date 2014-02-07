@@ -10,7 +10,7 @@
 
  #include <time.h>
  #include "SplashState.h"
- #include "../SpellByte.h"
+ #include "../define.h"
 
  namespace SpellByte
  {
@@ -122,7 +122,7 @@
         }
     }
 
-    void SplashState::update(const Ogre::FrameEvent &evt)
+    bool SplashState::update(const Ogre::FrameEvent &evt)
     {
         double CurrentTime = clock() - SplashStart;
         double Color = 0;
@@ -151,6 +151,7 @@
         mat->getTechnique(0)->getPass(0)->setAmbient(Color,Color,Color);
         mat->getTechnique(0)->getPass(0)->setSelfIllumination(Color,Color,Color);
 
+        return true;
     }
 
     void SplashState::resume()

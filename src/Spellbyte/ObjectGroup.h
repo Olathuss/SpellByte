@@ -5,14 +5,12 @@
 #include "Object.h"
 #include "utilities/tinyxml2.h"
 
-namespace SpellByte
-{
+namespace SpellByte {
     class ObjectFactory;
-    class ObjectGroup
-    {
+
+    class ObjectGroup {
     private:
-        enum Y_SNAP
-        {
+        enum Y_SNAP {
             // Snap to terrain
             Y_TERRAIN,
             // Snap relative to terrain
@@ -21,9 +19,13 @@ namespace SpellByte
             Y_ABSOLUTE,
             Y_INVALID
         };
+
         std::string GroupName;
         bool Enabled;
+
+        // Store children objects here
         std::vector<Object*> ObjectVector;
+        // Store child object groups here
         std::vector<ObjectGroup*> ObjectGroupVector;
         int ysnap;
         static int NextValidID;
@@ -38,10 +40,10 @@ namespace SpellByte
         void loadSubGroups(tinyxml2::XMLElement *groupElt, ObjectFactory *objFactory);
         void loadObjects(tinyxml2::XMLElement *objectElt, ObjectFactory *objFactory);
 
-        void addObject(const Object *addObj);
+        void addObject(Object *addObj);
         void removeObject(const Object *removeObj);
 
-        void addObjectGroup(const ObjectGroup *addObjGroup);
+        void addObjectGroup(ObjectGroup *addObjGroup);
         void resetY();
 
         // save group to XML

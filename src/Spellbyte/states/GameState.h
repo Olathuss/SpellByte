@@ -26,9 +26,9 @@ namespace SpellByte
         bool pause();
         void resume();
 
-        void buildGUI(){};
+        void buildGUI();
 
-        void update(const Ogre::FrameEvent &evt);
+        bool update(const Ogre::FrameEvent &evt);
         void handleEvents();
 
         MOC::CollisionTools* mCollisionTools;

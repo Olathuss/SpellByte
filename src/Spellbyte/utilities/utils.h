@@ -32,6 +32,24 @@ inline long unsignedCharArrayToLong(unsigned char* ucArray)
     return dest;
 }
 
+inline int unsignedCharArrayToInt(unsigned char* ucArray)
+{
+    int dest;
+    dest = ( (ucArray[0] << 24)
+            + (ucArray[1] << 16)
+            + (ucArray[2] << 8)
+            + (ucArray[3]));
+    return dest;
+}
+
+inline short unsignedCharArrayToShort(unsigned char* ucArray)
+{
+    short dest;
+    dest = ( (ucArray[0] << 8)
+            + (ucArray[1]));
+    return dest;
+}
+
 // Converts dword to long
 inline long dwordToLong(unsigned long dWord)
 {

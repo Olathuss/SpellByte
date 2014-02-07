@@ -9,7 +9,7 @@
  */
 
  #include "LoadState.h"
- #include "../SpellByte.h"
+ #include "../define.h"
 
  namespace SpellByte
  {
@@ -72,13 +72,14 @@
 
     }
 
-    void LoadState::update(const Ogre::FrameEvent &evt)
+    bool LoadState::update(const Ogre::FrameEvent &evt)
     {
         if(Quit == true)
         {
             Parent->shutDown();
-            return;
+            return false;
         }
+        return true;
     }
 
     void LoadState::resume()

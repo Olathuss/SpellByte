@@ -58,6 +58,9 @@ namespace SpellByte
         {
             return "Invalid command or no subscriber";
         }
+        if (cmdQueue.empty()) {
+            return "Error: Valid subscriber, but no parameters given.";
+        }
         return it->second->handleConsoleCmd(cmdQueue);
     }
 

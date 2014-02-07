@@ -15,6 +15,7 @@ namespace SpellByte
         playerHeight = APP->getConfigFloat("height");
         moveSpeed = APP->getConfigFloat("speed");
         collisionRadius = APP->getConfigFloat("player_radius");
+        collisionMask = 0;
         COMM->registerSubscriber("player", this);
     }
 
@@ -49,8 +50,10 @@ namespace SpellByte
         cameraRollNode = cameraPitchNode->createChildSceneNode();
         cameraRollNode->attachObject(Camera);
         cameraNode->setPosition(Ogre::Vector3::ZERO);
+        cameraNode->setPosition(APP->getConfigFloat("playerstartx"), APP->getConfigFloat("playerstarty"), APP->getConfigFloat("playerstartz"));
 
-        enabledCollision = true;
+        enabledCollision = false;
+        collisionMask |= World::COLLISION_MASK::STATIC;
 
         bindToLUA();
         return true;
@@ -85,8 +88,7 @@ namespace SpellByte
         return txt;
     }
 
-    std::string Player::handleConsoleCmd(std::queue<std::string> cmdQueue)
-    {
+    std::string Player::handleConsoleCmd(std::queue<std::string> cmdQueue) {
         std::string returnString;
         std::string nextCmd = cmdQueue.front();
         cmdQueue.pop();
@@ -94,7 +96,7 @@ namespace SpellByte
         {
             return getDebugString();
         }
-        if(nextCmd == "move")
+        else if(nextCmd == "move")
         {
             float x, y, z;
             Ogre::Vector3 pos = cameraNode->getPosition();
@@ -145,7 +147,8 @@ namespace SpellByte
     {
         collisionHandler = ct;
         collisionHandler->setHeightAdjust(playerHeight);
-        collisionHandler->calculateY(cameraNode);
+        if(enabledCollision)
+            collisionHandler->calculateY(cameraNode);
     }
 
     void Player::update(const Ogre::FrameEvent &evt)

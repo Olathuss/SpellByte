@@ -27,10 +27,10 @@ namespace SpellByte
         }
     }
 
-    void StateManager::update(const Ogre::FrameEvent &evt)
+    bool StateManager::update(const Ogre::FrameEvent &evt)
     {
         if(!ActiveStateStack.empty())
-            ActiveStateStack.back()->update(evt);
+            return ActiveStateStack.back()->update(evt);
     }
 
     void StateManager::handleEvents()

@@ -7,27 +7,23 @@ namespace SpellByte
 {
     GameConsoleWindow *GameConsoleWindow::Instance = NULL;
 
-    GameConsoleWindow::GameConsoleWindow()
-    {
+    GameConsoleWindow::GameConsoleWindow() {
         rootWindow = NULL;
         ConsoleWindow = NULL;
+        Initialized = false;
         setVisible(false);
         Console = false;
-        Initialized = false;
     }
 
-    GameConsoleWindow *GameConsoleWindow::getInstance()
-    {
-        if(!Instance)
-        {
+    GameConsoleWindow *GameConsoleWindow::getInstance() {
+        if(!Instance) {
             Instance = new GameConsoleWindow();
         }
 
         return Instance;
     }
 
-    bool GameConsoleWindow::Init(CEGUI::Window *root)
-    {
+    bool GameConsoleWindow::Init(CEGUI::Window *root) {
         rootWindow = root;
         Initialized = createCEGUIWindow();
         setVisible(false);
@@ -36,17 +32,15 @@ namespace SpellByte
         return Initialized;
     }
 
-    void GameConsoleWindow::bindToLUA()
-    {
+    void GameConsoleWindow::bindToLUA() {
         SLB::Class< GameConsoleWindow, SLB::Instance::NoCopyNoDestroy >("SpellByte::GCW")
             .set("debugText", ( void(GameConsoleWindow::*)(std::string) ) &GameConsoleWindow::debugText);
         SLB::setGlobal<GameConsoleWindow*>(&(*LUAMANAGER->LUA), getInstance(), "console");
     }
 
-    void GameConsoleWindow::Disable()
-    {
-        if(ConsoleWindow)
-        {
+    void GameConsoleWindow::Disable() {
+        if(ConsoleWindow) {
+            setVisible(false);
             rootWindow->destroyChild(ConsoleWindow);
             ConsoleWindow = NULL;
         }
@@ -69,33 +63,32 @@ namespace SpellByte
         // Load layout file
         ConsoleWindow = WindowManager->loadLayoutFromFile("VanillaConsole.layout");
 
-        if(ConsoleWindow && rootWindow)
-        {
+        if(ConsoleWindow && rootWindow) {
+            LOG("CEGUI Console Created");
             rootWindow->addChild(ConsoleWindow);
             ConsoleWindow->getChild("History")->setText("SpellByte Console");
             (this)->registerHandlers();
             return true;
-        }
-        else
-        {
+        } else {
             LOG("Error: Unable to load ConsoleWindow from .layout");
             return false;
         }
         return false;
     }
 
-    void GameConsoleWindow::registerHandlers()
-    {
+    void GameConsoleWindow::registerHandlers() {
+        LOG("GCW Registering Handlers");
         ConsoleWindow->getChild("Editbox")->subscribeEvent(CEGUI::Editbox::EventTextAccepted,
                                 CEGUI::Event::Subscriber(&GameConsoleWindow::handleTextSubmitted, this));
+        LOG("CEGUI Handlers registered");
     }
 
-    bool GameConsoleWindow::handleTextSubmitted(const CEGUI::EventArgs &e)
-    {
+    bool GameConsoleWindow::handleTextSubmitted(const CEGUI::EventArgs &e) {
         if(!Initialized)
             return false;
 
-        const CEGUI::WindowEventArgs *args = static_cast<const CEGUI::WindowEventArgs*>(&e);
+        //const CEGUI::WindowEventArgs *args = static_cast<const CEGUI::WindowEventArgs*>(&e);
+        LOG("Handling text");
 
         CEGUI::String Msg = ConsoleWindow->getChild("Editbox")->getText();
 
@@ -106,33 +99,28 @@ namespace SpellByte
         return true;
     }
 
-    void GameConsoleWindow::parseText(CEGUI::String inMsg)
-    {
+    void GameConsoleWindow::parseText(CEGUI::String inMsg) {
         if(!Initialized)
             return;
 
         std::string inString = inMsg.c_str();
 
-        if(inString.length() >= 1)
-        {
+        if(inString.length() >= 1) {
             (this)->outputText(inString);
             (this)->outputText(COMM->handleConsoleCmd(inString));
         }
     }
 
-    void GameConsoleWindow::debugText(std::string debugText)
-    {
+    void GameConsoleWindow::debugText(std::string debugText) {
         outputText(debugText.c_str());
     }
 
-    void GameConsoleWindow::outputText(CEGUI::String inMsg)
-    {
+    void GameConsoleWindow::outputText(CEGUI::String inMsg) {
         if(!Initialized)
             return;
 
         CEGUI::String output = ConsoleWindow->getChild("History")->getText() + inMsg;
-        if(output.length() > CONSOLE_BUFFER_SIZE)
-        {
+        if(output.length() > CONSOLE_BUFFER_SIZE) {
             output = output.substr(CONSOLE_BUFFER_SIZE / 2, output.length());
         }
         ConsoleWindow->getChild("History")->setText(output);
@@ -140,27 +128,28 @@ namespace SpellByte
         history->getVertScrollbar()->setScrollPosition(history->getVertScrollbar()->getDocumentSize() - history->getVertScrollbar()->getPageSize());
     }
 
-    void GameConsoleWindow::setVisible(bool visible)
-    {
+    void GameConsoleWindow::setVisible(bool visible) {
         if(!Initialized)
             return;
 
+        LOG("Console Visibility Being Changed");
         ConsoleWindow->setVisible(visible);
+        LOG("Console Visibility Has Been Changed");
         Console = visible;
 
         CEGUI::Editbox *editBox = static_cast<CEGUI::Editbox*>(ConsoleWindow->getChild("Editbox"));
         editBox->setText("");
-        if(visible)
+        if(visible) {
             editBox->activate();
-        else
+        } else {
             editBox->deactivate();
+        }
     }
 
-    bool GameConsoleWindow::isVisible()
-    {
+    bool GameConsoleWindow::isVisible() {
         if(!Initialized)
             return false;
 
-        return ConsoleWindow->isVisible();
+        return Console;
     }
 }

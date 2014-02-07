@@ -30,20 +30,26 @@ extern "C" {
             // Program already exists.
             return(1);
         }*/
+#endif // WIN32_LEAN_AND_MEAN
 
         SpellByte::Application Game;
-#endif // WIN32_LEAN_AND_MEAN
-        try
-        {
+
+        try {
             Game.execute();
-        }
-        catch(Ogre::Exception &e)
-        {
+        } catch(Ogre::Exception &e) {
+
 #ifdef WIN32_LEAN_AND_MEAN
             MessageBox( NULL, e.getFullDescription().c_str(), "An exception has occured", MB_OK | MB_ICONERROR | MB_TASKMODAL);
 #else
             std::cerr << "An exception has occured: " <<
                         e.getFullDescription().c_str() << std::endl;
+#endif // WIN32_LEAN_AND_MEAN
+        } catch(CEGUI::Exception &e) {
+#ifdef WIN32_LEAN_AND_MEAN
+            MessageBox( NULL, e.getMessage().c_str(), "An exception has occured", MB_OK | MB_ICONERROR | MB_TASKMODAL);
+#else
+            std::cerr << "An exception has occured: " <<
+                        e.getMessage().c_str() << std::endl;
 #endif // WIN32_LEAN_AND_MEAN
         }
 
