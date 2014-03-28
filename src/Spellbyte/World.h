@@ -8,6 +8,7 @@
 #include "./utilities/tinyxml2.h"
 #include "Player.h"
 #include "ObjectGroup.h"
+#include "coldet/multiobject.h"
 #include "world/WaterMesh.h"
 #include "world/Water.h"
 
@@ -61,12 +62,18 @@ namespace SpellByte
         // set collision tools
         void setCollisionTool(MOC::CollisionTools *collisionTool)
         {
-            GameCollisionTools = collisionTool;
+            //GameCollisionTools = collisionTool;
         }
 
         virtual void loadData(tinyxml2::XMLElement *dataElt);
-        // Get config float setting
+        // Get config settings
+        bool hasDataFloat(std::string ID) const;
         const float getDataFloat(std::string ID) const;
+        bool hasDataInt(std::string ID) const;
+        const int getDataInt(std::string ID) const;
+
+        // ColDet collision
+        COLDET::MultiObjectSystem* worldObjectSystem;
 
     private:
         struct Layer {
@@ -132,6 +139,7 @@ namespace SpellByte
         Ogre::String heightMap;
         int mapwidth;
         int mapheight;
+        int terrainRenderQueue;
         bool multi_terrain;
         Ogre::SceneNode *objectsNode;
         // For groups and their groups/objects
@@ -139,11 +147,12 @@ namespace SpellByte
         // For independent objects not in group
         std::vector<Object*> WorldObjects;
 
-        MOC::CollisionTools *GameCollisionTools;
+        //MOC::CollisionTools *GameCollisionTools;
 
         std::vector<Ogre::String> heightMaps;
         std::vector<Layer> terrainLayers;
         std::map<std::string, float> worldFloats;
+        std::map<std::string, int> worldInts;
         int worldVersionMajor;
         int worldVersionMinor;
     };

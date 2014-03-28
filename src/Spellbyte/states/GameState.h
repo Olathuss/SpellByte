@@ -31,7 +31,7 @@ namespace SpellByte
         bool update(const Ogre::FrameEvent &evt);
         void handleEvents();
 
-        MOC::CollisionTools* mCollisionTools;
+        //MOC::CollisionTools* mCollisionTools;
 
     private:
         // GUI

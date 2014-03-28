@@ -22,9 +22,7 @@
 #include "states/PlayMenuState.h"
 #include "ControlManager.h"
 
-#ifdef AUDIO
 #include "audio/AudioManager.h"
-#endif
 
 namespace SpellByte {
     template<> Application* Ogre::Singleton<Application>::msSingleton = 0;
@@ -41,9 +39,7 @@ namespace SpellByte {
         SceneMgr(0),
         SBResourceManager(0),
         xmlManager(0),
-#ifdef AUDIO
         wavManager(0),
-#endif
         ceguiRenderer(0),
         ceguiContext(0),
         GameStateManager(0) {
@@ -80,12 +76,10 @@ namespace SpellByte {
 
         if (InputMgr)
             OIS::InputManager::destroyInputSystem(InputMgr);
-#ifdef AUDIO
         if (wavManager) {
             delete Ogre::ResourceGroupManager::getSingleton()._getResourceManager("WAVFile");
             wavManager = 0;
         }
-#endif
         if (xmlManager) {
             delete Ogre::ResourceGroupManager::getSingleton()._getResourceManager("XMLResource");
             xmlManager = 0;
@@ -127,10 +121,8 @@ namespace SpellByte {
             //LOG("Update GameStateManager");
             GameStateManager->update(evt);
 
-#ifdef AUDIO
             // Update AudioManager to remove sounds which aren't playing
             AUDIOMAN->update(evt);
-#endif
 
             // If Window is closed, then quit
             //LOG("Check RenderWindow closed");
@@ -163,11 +155,9 @@ namespace SpellByte {
         bindToLUA();
         LOG("LUA Initialization Complete");
 
-#ifdef AUDIO
         LOG("Initializing AudioManager");
         AUDIOMAN->init();
         LOG("AudioManager Initialized");
-#endif
 
         // Create Ogre scene manager
         SceneMgr = OgreRoot->createSceneManager(Ogre::ST_GENERIC, "SpellByteSceneMgr");
@@ -378,9 +368,7 @@ namespace SpellByte {
         // Create SpellByte Resource and XML Managers
         SBResourceManager = new SBResFileManager();
         xmlManager = new XMLResourceManager();
-#ifdef AUDIO
         wavManager = new WAVFileManager();
-#endif
 
         // Declare default resource file, may want to specificy in SpellByte XML config?
         Ogre::ResourceGroupManager::getSingleton().declareResource("resource.spb", "SBResourceFile");

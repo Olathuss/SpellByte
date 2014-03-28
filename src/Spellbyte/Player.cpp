@@ -52,7 +52,7 @@ namespace SpellByte
         cameraNode->setPosition(Ogre::Vector3::ZERO);
         cameraNode->setPosition(APP->getConfigFloat("playerstartx"), APP->getConfigFloat("playerstarty"), APP->getConfigFloat("playerstartz"));
 
-        enabledCollision = false;
+        //enabledCollision = false;
         collisionMask |= World::COLLISION_MASK::STATIC;
 
         bindToLUA();
@@ -145,10 +145,10 @@ namespace SpellByte
 
     void Player::setCollisionHanlder(MOC::CollisionTools *ct)
     {
-        collisionHandler = ct;
+        /*collisionHandler = ct;
         collisionHandler->setHeightAdjust(playerHeight);
         if(enabledCollision)
-            collisionHandler->calculateY(cameraNode);
+            collisionHandler->calculateY(cameraNode);*/
     }
 
     void Player::update(const Ogre::FrameEvent &evt)
@@ -205,7 +205,7 @@ namespace SpellByte
             moveSpeed /= 5;
             break;
         case UserEvent::PLAYER_SET_CLIPPING:
-            enabledCollision = (enabledCollision == false) ? true : false;
+            //enabledCollision = (enabledCollision == false) ? true : false;
             break;
         }
     }
@@ -274,7 +274,7 @@ namespace SpellByte
             }
         }
 
-        if(enabledCollision)
+        /*if(enabledCollision)
         {
             collisionHandler->calculateY(cameraNode,true,true,1.5f,1);
             if (collisionHandler->collidesWithEntity(oldPos, cameraNode->getPosition(), collisionRadius, -1.0f, -1))
@@ -285,6 +285,6 @@ namespace SpellByte
             {
                 cameraNode->setPosition(oldPos);
             }
-        }
+        }*/
     }
 }

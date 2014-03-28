@@ -5,8 +5,18 @@
 #include <map>
 #include "utilities/tinyxml2.h"
 #include "stdafx.h"
+#include "coldet/coldet.h"
 
 namespace SpellByte {
+
+    void getMeshInformation(const Ogre::Mesh* const mesh,
+                        size_t &vertex_count,
+                        Ogre::Vector3* &vertices,
+                        size_t &index_count,
+                        unsigned long* &indices,
+                        const Ogre::Vector3 &position,
+                        const Ogre::Quaternion &orient,
+                        const Ogre::Vector3 &scale);
 
     class World;
     typedef int ObjectID;
@@ -84,6 +94,8 @@ namespace SpellByte {
         void createNode(Ogre::SceneNode *parentNode = NULL);
         void createNode(std::string objectName, Ogre::SceneNode *parentNode = NULL);
 
+        void addTrianglesToColdet(Ogre::Entity *entity);
+
         int ysnap;
 
         std::map<std::string, std::string> meshMaterials;
@@ -104,6 +116,9 @@ namespace SpellByte {
         ObjectGroup *ObjectParent;
 
         World* WorldPtr;
+
+        CollisionModel3D *coldetModel;
+        int coldetID;
 
     public:
         Object();

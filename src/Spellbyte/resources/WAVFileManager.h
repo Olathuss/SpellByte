@@ -11,7 +11,6 @@
 #ifndef _WAVFILEMANAGER_H_
 #define _WAVFILEMANAGER_H_
 
-#ifdef AUDIO
 #include <OgreResourceManager.h>
 #include "WAVResourceFile.h"
 
@@ -36,7 +35,6 @@ namespace SpellByte
         static WAVFileManager *getSingletonPtr();
     };
 }
-#endif
 
 #endif // _CRESFILEMANAGER_H_
 

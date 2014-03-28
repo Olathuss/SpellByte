@@ -15,7 +15,6 @@
 #ifndef _WAVRESFILE_H_
 #define _WAVRESFILE_H_
 
-#ifdef AUDIO
 #include <OgreResourceManager.h>
 #include <AL/al.h>
 #include <AL/alc.h>
@@ -114,6 +113,6 @@ namespace SpellByte {
         }
      };
 }
-#endif
- #endif // _WAVRESFILE_H_
+
+#endif // _WAVRESFILE_H_
 

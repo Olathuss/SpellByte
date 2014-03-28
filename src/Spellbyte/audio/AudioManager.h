@@ -4,7 +4,6 @@
 #include <vector>
 #include <string>
 #include "../define.h"
-#ifdef AUDIO
 #include <AL/al.h>
 #include <AL/alc.h>
 #include "../Subscriber.h"
@@ -44,6 +43,5 @@ namespace SpellByte {
         ALenum err;
     };
 }
-#endif
 
 #endif // _SOUND_MANAGER_H_

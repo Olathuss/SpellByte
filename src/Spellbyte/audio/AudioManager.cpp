@@ -1,7 +1,6 @@
 #include <cstdio>
 #include "AudioManager.h"
 
-#ifdef AUDIO
 #include "../console/LuaManager.h"
 #include "SLB.hpp"
 #include "../console/console.h"
@@ -146,4 +145,4 @@ namespace SpellByte {
         SLB::setGlobal<AudioManager*>(&(*LUAMANAGER->LUA), AudioManager::getInstance(), "AudioManager");
     }
 }
-#endif
+

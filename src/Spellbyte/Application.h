@@ -95,9 +95,7 @@ namespace SpellByte {
         // Resource related
         SBResFileManager *SBResourceManager;
         XMLResourceManager *xmlManager;
-#ifdef AUDIO
         WAVFileManager *wavManager;
-#endif
 
         // CEGUI related
         CEGUI::OgreRenderer *ceguiRenderer;
@@ -155,3 +153,4 @@ namespace SpellByte {
 }
 
 #endif // _APPLICATION_H_
+

@@ -87,10 +87,14 @@ namespace SpellByte
         APP->attachWorld(this);
         objectsNode = SceneMgr->getRootSceneNode()->createChildSceneNode("objectsNode");
 
+
         Ogre::Plane plane(Ogre::Vector3::UNIT_Y, 0);
 
         Ogre::MeshManager::getSingleton().createPlane("water", Ogre::ResourceGroupManager::DEFAULT_RESOURCE_GROUP_NAME,
-                                                        plane, 300, 220, 20, 20, true, 1, 10, 10, Ogre::Vector3::UNIT_Z);
+                                                        plane, 300, 220, 20, 20, true, 1, 20, 20, Ogre::Vector3::UNIT_Z);
+
+        Ogre::MeshManager::getSingleton().createPlane("ground", Ogre::ResourceGroupManager::DEFAULT_RESOURCE_GROUP_NAME,
+                                                        plane, 170, 280, 1, 1, true, 1, 1, 1, Ogre::Vector3::UNIT_Z);
 
         Ogre::MeshManager::getSingleton().createPlane("ocean", Ogre::ResourceGroupManager::DEFAULT_RESOURCE_GROUP_NAME,
                                                         plane, 10000, 10000, 100, 100, true, 1, 1, 1, Ogre::Vector3::UNIT_Z);
@@ -166,7 +170,9 @@ namespace SpellByte
 
         terrainGlobals = NULL;
         terrainGroup = NULL;
-        GameCollisionTools = NULL;
+        //GameCollisionTools = NULL;
+        worldObjectSystem = NULL;
+        worldObjectSystem = COLDET::newSweepPruneSystem(2048);
     }
 
     World::~World()
@@ -176,6 +182,10 @@ namespace SpellByte
         if (waterMesh) {
             delete waterMesh;
             waterMesh = NULL;
+        }
+        if(worldObjectSystem) {
+            delete worldObjectSystem;
+            worldObjectSystem = NULL;
         }
     }
 
@@ -243,7 +253,7 @@ namespace SpellByte
             xml_layer->SetAttribute("normal", terrainLayers[i].normal.c_str());
         }
 
-        tinyxml2::XMLElement *xml_objects = xmlFile.NewElement("objects");
+        tinyxml2::XMLElement *xml_objects = xmlFile.NewElement("static");
         xml_world->InsertEndChild(xml_objects);
         for(unsigned int i = 0; i < WorldObjects.size(); i++)
         {
@@ -503,8 +513,8 @@ namespace SpellByte
             }
         }
         terrainGroup->freeTemporaryResources();
-        if(GameCollisionTools)
-            GameCollisionTools->terrGroup = terrainGroup;
+        //if(GameCollisionTools)
+        //   GameCollisionTools->terrGroup = terrainGroup;
         //terrainGroup->saveAllTerrains(false);
     }
 
@@ -542,19 +552,19 @@ namespace SpellByte
         manAnimState->setLoop(true);
         manAnimState->setEnabled(true);*/
 
-        /*Ogre::Entity *ent = SceneMgr->createEntity("male", "NoNameMat0.mesh");
+        /*Ogre::Entity *ent = SceneMgr->createEntity("male", "MedBaseMaleApril2013.mesh");
         manNode = SceneMgr->getRootSceneNode()->createChildSceneNode("male");
         manNode->attachObject(ent);
-        manNode->setScale(10, 10, 10);
+        manNode->setScale(.012, .012, .012);
 
         Ogre::AnimationStateSet *animSet = ent->getAllAnimationStates();
         Ogre::AnimationStateIterator iter = animSet->getAnimationStateIterator();
         while(iter.hasMoreElements())
         {
             LOG("Animation name: " + iter.getNext()->getAnimationName());
-        }*/
+        }
 
-        /*std::vector<Ogre::String> entParts;
+        std::vector<Ogre::String> entParts;
         entParts.push_back("BaseArms");
         entParts.push_back("BaseHands");
         entParts.push_back("BaseHairC");
@@ -564,9 +574,9 @@ namespace SpellByte
         entParts.push_back("ThiefHood");
         entParts.push_back("ThiefTorso");
         entParts.push_back("ThiefTrousers_MinerMeshExchange_");
-        entParts.push_back("MinerBoots");*/
+        entParts.push_back("MinerBoots");
         //entParts.push_back("FarmerTorso");das
-        /*for(unsigned int i = 0; i < ent->getNumSubEntities(); ++i)
+        for(unsigned int i = 0; i < ent->getNumSubEntities(); ++i)
         {
             Ogre::SubEntity *sEnt;
             sEnt = ent->getSubEntity(i);
@@ -577,9 +587,9 @@ namespace SpellByte
             Ogre::SubEntity *sEnt;
             sEnt = ent->getSubEntity(entParts[i]);
             sEnt->setVisible(true);
-        }*/
-        /*manNode->setPosition(0, terrainGroup->getHeightAtWorldPosition(0, 0, 0), 0);
-        manAnimState = ent->getAnimationState("default_skl");
+        }
+        manNode->setPosition(-107.74, terrainGroup->getHeightAtWorldPosition(-107.74, 0, 358.74), 358.74);
+        manAnimState = ent->getAnimationState("NPCLookingAround");
         manAnimState->setLoop(true);
         manAnimState->setEnabled(true);*/
     }
@@ -770,6 +780,9 @@ namespace SpellByte
         terrainGlobals->setLightMapDirection(light->getDerivedDirection());
         terrainGlobals->setCompositeMapAmbient(SceneMgr->getAmbientLight());
         terrainGlobals->setCompositeMapDiffuse(light->getDiffuseColour());
+        if(hasDataInt("renderqueue")) {
+            terrainGlobals->setRenderQueueGroup(getDataInt("renderqueue"));
+        };
 
         Ogre::Terrain::ImportData &defaultimp = terrainGroup->getDefaultImportSettings();
         defaultimp.terrainSize = getDataFloat("heightmapsize") + 1;
@@ -864,14 +877,52 @@ namespace SpellByte
                 worldFloats[key] = value;
             }
         }
+        for(tinyxml2::XMLElement *element = dataElt->FirstChildElement("int"); element;
+            element = element->NextSiblingElement()) {
+
+            const char *key=element->Attribute("id");
+            int value=element->FloatAttribute("value");
+            if(key) {
+                worldInts[key] = value;
+            }
+        }
 
         return;
+    }
+
+    bool World::hasDataFloat(std::string ID) const {
+        std::map<std::string, float>::const_iterator it;
+        it = worldFloats.find(ID);
+        if(it == worldFloats.end()) {
+                return false;
+        }
+        return true;
     }
 
     const float World::getDataFloat(std::string ID) const {
         std::map<std::string, float>::const_iterator it;
         it = worldFloats.find(ID);
         if(it == worldFloats.end()) {
+            Ogre::String desc = "Error finding setting " + ID;
+            throw(Ogre::Exception(20, desc, "World"));
+        }
+
+        return it->second;
+    }
+
+    bool World::hasDataInt(std::string ID) const {
+        std::map<std::string, int>::const_iterator it;
+        it = worldInts.find(ID);
+        if(it == worldInts.end()) {
+                return false;
+        }
+        return true;
+    }
+
+    const int World::getDataInt(std::string ID) const {
+        std::map<std::string, int>::const_iterator it;
+        it = worldInts.find(ID);
+        if(it == worldInts.end()) {
             Ogre::String desc = "Error finding setting " + ID;
             throw(Ogre::Exception(20, desc, "World"));
         }

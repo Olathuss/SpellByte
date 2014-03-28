@@ -28,6 +28,7 @@
 					<Add library="libboost_thread-mgw47-mt-d-1_51" />
 					<Add library="libboost_system-mgw47-mt-d-1_51" />
 					<Add library="libboost_chrono-mgw47-mt-d-1_51" />
+					<Add library="openal" />
 					<Add directory="../lib/ogre/debug" />
 					<Add directory="../lib/cegui/debug" />
 					<Add directory="../boost/lib" />
@@ -64,6 +65,7 @@
 		<Compiler>
 			<Add option="-Wall" />
 			<Add option="-fpermissive" />
+			<Add option="-DAUDIO" />
 			<Add directory="../include" />
 			<Add directory="../include/OGRE" />
 			<Add directory="../../Spellbyte/boost" />
@@ -114,12 +116,36 @@
 		<Unit filename="Spellbyte/Subscriber.h" />
 		<Unit filename="Spellbyte/World.cpp" />
 		<Unit filename="Spellbyte/World.h" />
+		<Unit filename="Spellbyte/audio/AudioManager.cpp" />
+		<Unit filename="Spellbyte/audio/AudioManager.h" />
+		<Unit filename="Spellbyte/coldet/bitmatrix.h" />
+		<Unit filename="Spellbyte/coldet/box.cpp" />
+		<Unit filename="Spellbyte/coldet/box.h" />
+		<Unit filename="Spellbyte/coldet/box_bld.cpp" />
+		<Unit filename="Spellbyte/coldet/cdmath3d.cpp" />
+		<Unit filename="Spellbyte/coldet/cdmath3d.h" />
+		<Unit filename="Spellbyte/coldet/coldet.cpp" />
+		<Unit filename="Spellbyte/coldet/coldet.h" />
+		<Unit filename="Spellbyte/coldet/coldet_bld.cpp" />
+		<Unit filename="Spellbyte/coldet/coldetimpl.h" />
+		<Unit filename="Spellbyte/coldet/multi_impl.h" />
+		<Unit filename="Spellbyte/coldet/multiobject.cpp" />
+		<Unit filename="Spellbyte/coldet/multiobject.h" />
+		<Unit filename="Spellbyte/coldet/mytritri.cpp" />
+		<Unit filename="Spellbyte/coldet/mytritri.h" />
+		<Unit filename="Spellbyte/coldet/sweep_prune.h" />
+		<Unit filename="Spellbyte/coldet/sysdep.cpp" />
+		<Unit filename="Spellbyte/coldet/sysdep.h" />
+		<Unit filename="Spellbyte/coldet/tritri.c">
+			<Option compilerVar="CC" />
+		</Unit>
 		<Unit filename="Spellbyte/console/LuaManager.cpp" />
 		<Unit filename="Spellbyte/console/LuaManager.h" />
 		<Unit filename="Spellbyte/console/console.cpp" />
 		<Unit filename="Spellbyte/console/console.h" />
 		<Unit filename="Spellbyte/console/console_communicator.cpp" />
 		<Unit filename="Spellbyte/console/console_communicator.h" />
+		<Unit filename="Spellbyte/define.h" />
 		<Unit filename="Spellbyte/error_defines.h" />
 		<Unit filename="Spellbyte/main.cpp" />
 		<Unit filename="Spellbyte/resources/ManualLoaders.h" />
@@ -127,6 +153,10 @@
 		<Unit filename="Spellbyte/resources/SpellByteResourceFile.h" />
 		<Unit filename="Spellbyte/resources/SpellByteResourceFileManager.cpp" />
 		<Unit filename="Spellbyte/resources/SpellByteResourceFileManager.h" />
+		<Unit filename="Spellbyte/resources/WAVFileManager.cpp" />
+		<Unit filename="Spellbyte/resources/WAVFileManager.h" />
+		<Unit filename="Spellbyte/resources/WAVResourceFile.cpp" />
+		<Unit filename="Spellbyte/resources/WAVResourceFile.h" />
 		<Unit filename="Spellbyte/resources/XMLResource.cpp" />
 		<Unit filename="Spellbyte/resources/XMLResource.h" />
 		<Unit filename="Spellbyte/resources/XMLResourceManager.cpp" />
@@ -158,6 +188,13 @@
 		<Unit filename="Spellbyte/utilities/tinyxml2.cpp" />
 		<Unit filename="Spellbyte/utilities/tinyxml2.h" />
 		<Unit filename="Spellbyte/utilities/utils.h" />
+		<Unit filename="Spellbyte/world/MaterialControls.h" />
+		<Unit filename="Spellbyte/world/Ocean.cpp" />
+		<Unit filename="Spellbyte/world/Ocean.h" />
+		<Unit filename="Spellbyte/world/Water.cpp" />
+		<Unit filename="Spellbyte/world/Water.h" />
+		<Unit filename="Spellbyte/world/WaterMesh.cpp" />
+		<Unit filename="Spellbyte/world/WaterMesh.h" />
 		<Extensions>
 			<code_completion />
 			<envvars />

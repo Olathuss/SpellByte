@@ -59,8 +59,8 @@ namespace SpellByte
         int PlayerAction;
 
         // Collision Handling
-        MOC::CollisionTools *collisionHandler;
-        bool enabledCollision;
+        //MOC::CollisionTools *collisionHandler;
+        //bool enabledCollision;
 
         // For FPS controls
         Ogre::Vector3 translateVector;
