@@ -33,10 +33,10 @@ using namespace SpellByte;
 
  public:
     // Default constructor, probably shouldn't be used
-    manualMeshLoader():resFileName(""), resPos(0) {}
+    manualMeshLoader():resFileName(""), resPos(-1) {}
     // Primary constructor that should be used
     // so resource file name and position can be set
-    manualMeshLoader(Ogre::String name, unsigned int &position)
+    manualMeshLoader(Ogre::String name, unsigned int position)
     {
         resFileName = name;
         resPos = position;
@@ -53,11 +53,11 @@ using namespace SpellByte;
         // Ensure the proper Resource File is loaded
         SBResFilePtr resPtr = SBResFileManager::getSingleton().load(resFileName, "SBResourceFile");
         // Get the name of our file
-        size_t len = resPtr->getDataSize(mesh->getName());
+        size_t len;// = resPtr->getDataSize(mesh->getName());
         // Allocate proper memory to contain mesh data
-        char* dataStream = new char[len];
+        char* dataStream;// = new char[len];
         // Get the actual data
-        dataStream = resPtr->getData(mesh->getName());
+        dataStream = resPtr->getData(mesh->getName(), len, resPos);
 
         // Although using MemoryDataStream to contain the mesh data
         // importMesh only takes a DataStreamPtr so we have to
@@ -69,7 +69,7 @@ using namespace SpellByte;
         // Import the mesh from the actual data
         tmp.importMesh(streamPtr, mesh);
         // Make sure our allocated char* gets deleted
-        delete dataStream;
+        delete[] dataStream;
     }
  };
 
@@ -86,10 +86,10 @@ using namespace SpellByte;
 
  public:
     // Default constructor, probably shouldn't be used
-    manualXMLLoader():resFileName(""), resPos(0) {}
+    manualXMLLoader():resFileName(""), resPos(-1) {}
     // Primary constructor that should be used
     // so resource file name and position can be set
-    manualXMLLoader(Ogre::String name, unsigned int &position)
+    manualXMLLoader(Ogre::String name, unsigned int position)
     {
         resFileName = name;
         resPos = position;
@@ -105,15 +105,15 @@ using namespace SpellByte;
         // Ensure the proper Resource File is loaded
         SBResFilePtr resPtr = SBResFileManager::getSingleton().load(resFileName, "SBResourceFile");
         // Get the name of our file
-        size_t len = resPtr->getDataSize(xmlResource->getName());
+        size_t len;// = resPtr->getDataSize(xmlResource->getName());
         // Allocate proper memory to contain mesh data
-        char* dataStream = new char[len];
+        char* dataStream;// = new char[len];
         // Get the actual data
-        dataStream = resPtr->getData(xmlResource->getName());
+        dataStream = resPtr->getData(xmlResource->getName(), len, resPos);
 
         xmlResource->xmlFile.Parse( dataStream, len );
 
-        delete dataStream;
+        delete[] dataStream;
     }
  };
 

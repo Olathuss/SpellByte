@@ -5,7 +5,6 @@
 
 #include "Actor.h"
 #include "utilities/tinyxml2.h"
-#include "DotSceneLoader.h"
 
 namespace SpellByte {
     class ActorFactory {
@@ -18,17 +17,9 @@ namespace SpellByte {
         ~ActorFactory();
 
         // Method used to create Actors
-        Actor *createActor(Ogre::SceneManager *SceneMgr, Ogre::SceneNode *parentNode, Ogre::TerrainGroup *tGrp, tinyxml2::XMLElement* xmlRoot);
+        Actor *createActor(Ogre::SceneManager *SceneMgr, World *worldPtr);
 
     protected:
-        //virtual ComponentPtr createComponent(tinyxml2::XMLNode *xmlElement);
-        // Helper functions
-        bool loadPosition(tinyxml2::XMLElement *elt, float &x, float &y, float &z);
-        bool loadScale(tinyxml2::XMLElement *elt, float &x, float &y, float &z);
-        bool loadRotate(tinyxml2::XMLElement *elt, float &roll, float &pitch, float &yaw);
-
-        // May be defunct?
-        Ogre::DotSceneLoader *dsl;
 
     private:
         // Get UniqueID for Actor

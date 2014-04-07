@@ -1,6 +1,7 @@
 #ifndef _SOUND_MANAGER_H_
 #define _SOUND_MANAGER_H_
 
+#ifdef AUDIO
 #include <vector>
 #include <string>
 #include "../define.h"
@@ -43,5 +44,6 @@ namespace SpellByte {
         ALenum err;
     };
 }
+#endif
 
 #endif // _SOUND_MANAGER_H_

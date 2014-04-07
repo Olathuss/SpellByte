@@ -4,6 +4,7 @@
 #include "SLB.hpp"
 #include "console/LuaManager.h"
 #include "World.h"
+#include "Object.h"
 
 namespace SpellByte
 {
@@ -17,6 +18,7 @@ namespace SpellByte
         collisionRadius = APP->getConfigFloat("player_radius");
         collisionMask = 0;
         COMM->registerSubscriber("player", this);
+        collisionNode = NULL;
     }
 
     Player::~Player()
@@ -38,6 +40,7 @@ namespace SpellByte
     {
         sceneMgr = sceneManager;
         GameWorld = world;
+        RSQ = sceneMgr->createRayQuery(Ogre::Ray());
 
         cameraNode = sceneMgr->getRootSceneNode()->createChildSceneNode();
         Camera->setNearClipDistance(0.1);
@@ -54,6 +57,14 @@ namespace SpellByte
 
         //enabledCollision = false;
         collisionMask |= World::COLLISION_MASK::STATIC;
+        collisionNode = sceneMgr->getRootSceneNode()->createChildSceneNode("PlayCollisionNode");
+        Ogre::Entity *collideEntity = sceneMgr->createEntity("PlayerEntity", "player.mesh", "General");
+        collisionModel = newCollisionModel3D(false);
+        addTrianglesToColdet(collideEntity, collisionModel);
+        collisionModel->finalize();
+        collisionNode->attachObject(collideEntity);
+        collisionNode->setPosition(cameraNode->getPosition());
+        updateCollisionModel();
 
         bindToLUA();
         return true;
@@ -143,12 +154,12 @@ namespace SpellByte
         return returnString;
     }
 
-    void Player::setCollisionHanlder(MOC::CollisionTools *ct)
+    void Player::setCollisionHandler(MOC::CollisionTools *ct)
     {
-        /*collisionHandler = ct;
+        collisionHandler = ct;
         collisionHandler->setHeightAdjust(playerHeight);
         if(enabledCollision)
-            collisionHandler->calculateY(cameraNode);*/
+            collisionHandler->calculateY(cameraNode);
     }
 
     void Player::update(const Ogre::FrameEvent &evt)
@@ -219,29 +230,36 @@ namespace SpellByte
     void Player::moveCamera()
     {
         translateVector = Ogre::Vector3::ZERO;
+        bool move = false;
         if(PlayerAction & PLAYER_UP)
         {
             cameraNode->setPosition(cameraNode->getPosition() + Ogre::Vector3(0, moveScale, 0));
+            move = true;
         }
         if(PlayerAction & PLAYER_DOWN)
         {
             cameraNode->setPosition(cameraNode->getPosition() - Ogre::Vector3(0, moveScale, 0));
+            move = true;
         }
         if(PlayerAction & PLAYER_FORWARD)
         {
             translateVector.z = -moveScale;
+            move = true;
         }
         if(PlayerAction & PLAYER_BACKWARD)
         {
             translateVector.z = moveScale;
+            move = true;
         }
         if(PlayerAction & PLAYER_LEFT)
         {
             translateVector.x = -moveScale;
+            move = true;
         }
         if(PlayerAction & PLAYER_RIGHT)
         {
             translateVector.x = moveScale;
+            move = true;
         }
 
         Ogre::Vector3 oldPos = cameraNode->getPosition();
@@ -252,9 +270,11 @@ namespace SpellByte
         cameraYawNode->yaw(rotX);
         cameraPitchNode->pitch(rotY);
 
-        cameraNode->translate(cameraYawNode->getOrientation() *
-                            cameraPitchNode->getOrientation() *
-                            translateVector, Ogre::SceneNode::TS_LOCAL);
+        if(move) {
+            cameraNode->translate(cameraYawNode->getOrientation() *
+                                cameraPitchNode->getOrientation() *
+                                translateVector, Ogre::SceneNode::TS_LOCAL);
+        }
 
         pitchAngle = (2 * Ogre::Degree(Ogre::Math::ACos(cameraPitchNode->getOrientation().w)).valueDegrees());
 
@@ -274,6 +294,10 @@ namespace SpellByte
             }
         }
 
+        if(!move) {
+            return;
+        }
+
         /*if(enabledCollision)
         {
             collisionHandler->calculateY(cameraNode,true,true,1.5f,1);
@@ -286,5 +310,93 @@ namespace SpellByte
                 cameraNode->setPosition(oldPos);
             }
         }*/
+        float rayHeightLevel = -1.0f;
+        Vector3 fromPoint = oldPos;
+        Vector3 toPoint = cameraNode->getPosition();
+        collisionNode->setPosition(toPoint.x, toPoint.y, toPoint.z);
+        updateCollisionModel();
+        Vector3 fromPointAdj(fromPoint.x, fromPoint.y + rayHeightLevel, fromPoint.z);
+        Vector3 toPointAdj(toPoint.x, toPoint.y + rayHeightLevel, toPoint.z);
+        Vector3 normal = toPointAdj - fromPointAdj;
+        float distToDest = normal.normalise();
+
+        Ogre::Ray ray(fromPointAdj, normal);
+        RSQ->setRay(ray);
+        RSQ->setSortByDistance(true);
+        Ogre::RaySceneQueryResult &result = RSQ->execute();
+        Ogre::RaySceneQueryResult::iterator itr;
+        for(itr = result.begin(); itr != result.end(); itr++) {
+            if ((itr->movable != NULL)  &&
+                (itr->movable->getMovableType().compare("Entity") == 0)) {
+                Ogre::Entity *pentity = static_cast<Ogre::Entity*>(itr->movable);
+                if(pentity->getName() == "collisionEntity")
+                    continue;
+                SpellByte::Object* obj;
+                try {
+                     obj = Ogre::any_cast<SpellByte::Object*>(pentity->getParentSceneNode()->getUserAny());
+                } catch(Ogre::Exception &e) {
+                    continue;
+                }
+                if(collisionModel->collision(obj->coldetModel)) {
+                    move = false;
+                    break;
+                    //cameraNode->setPosition(oldPos);
+                    //Ogre::Entity *ent = sceneMgr->createEntity("collisionEntity", "player.mesh", "General");
+                    //collisionNode->attachObject(ent);
+                    float collision[3];
+                    obj->coldetModel->getCollisionPoint(collision, false);
+                    Ogre::Vector3 coll = Ogre::Vector3(collision[0], collision[1], collision[2]);
+                    //Ogre::SceneNode collideNode = sceneMgr->getRootSceneNode()->createChildSceneNode("CollideNode");
+                    //Ogre::Entity *collideEntity = sceneMgr->createEntity("CollideEntity", "player.mesh", "General");
+                    //collideNode->attachObject(collideEntity);
+                    collisionNode->setPosition(coll);
+                    std::cout << "Possible collision with: " << obj->getName() << std::endl;
+                    std::cout << "X: " << collision[0] << " Y: " << collision[1] << " Z: " << collision[2] << std::endl;
+                    std::cout << "X: " << oldPos.x << " Y: " << oldPos.y << " Z: " << oldPos.z << std::endl;
+                    std::cout << "Distance to Dest: " << oldPos.distance(toPoint) <<
+                                "Distance to Collision: " << oldPos.distance(coll) << std::endl;
+                    if(oldPos.distance(coll) <= distToDest) {
+                        std::cout << "TRUE TRUE TRUE" << std::endl;
+                        cameraNode->setPosition(oldPos);
+                        //collisionNode->setPosition(oldPos);
+                        break;
+                    }
+                }
+                /*Ogre::Vector3 tmp = ray.getOrigin();
+                float origin[3] = { tmp[0], tmp[1], tmp[2] };
+                tmp = ray.getDirection();
+                float direction[3] = { tmp[0], tmp[1], tmp[2] };
+                if(obj->coldetModel->rayCollision(origin, direction)) {
+                    std::cout << "Collision Name: " << obj->getName() << std::endl;
+                    float collision[3];
+                    obj->coldetModel->getCollisionPoint(collision, false);
+                    std::cout << "X: " << collision[0] << " Y: " << collision[1] << " Z: " << collision[2] << std::endl;
+                    std::cout << "X: " << oldPos.x << " Y: " << oldPos.y << " Z: " << oldPos.z << std::endl;
+                    Ogre::Vector3 coll = Ogre::Vector3(collision[0], collision[1], collision[2]);
+                    std::cout << "Distance to Dest: " << oldPos.distance(toPoint) <<
+                                "Distance to Collision: " << oldPos.distance(coll) << std::endl;
+                    if(oldPos.distance(coll) - 3.0f <= distToDest) {
+                        std::cout << "TRUE TRUE TRUE" << std::endl;
+                        cameraNode->setPosition(oldPos);
+                        break;
+                    }
+                }*/
+            }
+        }
+        //collisionHandler->collidesWithEntity(oldPos, cameraNode->getPosition(), collisionRadius, -1.0f, -1);
+    }
+
+    void Player::updateCollisionModel() {
+        Ogre::Matrix4 matrix4 = collisionNode->_getFullTransform().transpose();
+
+        float matrix[16];
+
+        for(int i = 0; i < 4; i++) {
+            for(int j = 0; j < 4; j++) {
+                matrix[j + (i * 4)] = matrix4[i][j];
+            }
+        }
+
+        collisionModel->setTransform(matrix);
     }
 }

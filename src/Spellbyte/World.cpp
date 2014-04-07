@@ -1,15 +1,13 @@
 #include <cstdlib>
 #include <time.h>
-#include <OgreSubEntity.h>
-
 #include "World.h"
 #include "define.h"
-//#include "ActorManager.h"
+#include "ActorManager.h"
+#include "ActorFactory.h"
 #include "console/LuaManager.h"
 #include "DotSceneLoader.h"
 #include "utilities/utils.h"
 #include "world/Water.h"
-
 
 // Does this need to be somewhere?
 // WaterCircle::clearStaticBuffers();
@@ -170,7 +168,7 @@ namespace SpellByte
 
         terrainGlobals = NULL;
         terrainGroup = NULL;
-        //GameCollisionTools = NULL;
+        GameCollisionTools = NULL;
         worldObjectSystem = NULL;
         worldObjectSystem = COLDET::newSweepPruneSystem(2048);
     }
@@ -330,6 +328,12 @@ namespace SpellByte
         xmlFile->unload();
         APP->xmlManager->unload(worldFile);
         LOG("World: World loading complete");
+        LOG("World: Populating with actors");
+        ActorFactory actorFactory;
+        for(int i = 0; i < 25; i++) {
+            actorFactory.createActor(SceneMgr, this);
+        }
+        LOG("World: Actor population complete");
         return true;
     }
 
@@ -339,10 +343,12 @@ namespace SpellByte
         WorldGroups.clear();
         DeleteSTLContainer(WorldObjects);
         WorldObjects.clear();
+        ActorMgr->clearActors();
         if(objectsNode)
             objectsNode->removeAndDestroyAllChildren();
         SceneMgr->destroyAllEntities();
         SceneMgr->destroyAllLights();
+        ActorMgr->reset();
         /*for(unsigned int i = 0; i < ObjectData.size(); i++)
         {
             delete ObjectData[i];
@@ -385,7 +391,7 @@ namespace SpellByte
     void World::processGroup(tinyxml2::XMLElement *groupElt, ObjectFactory *objFactory, Ogre::SceneNode *grpNode)
     {
         tinyxml2::XMLElement *group = groupElt->FirstChildElement("group");
-        while(group)
+        while (group)
         {
             ObjectGroup *objGroup = new ObjectGroup();
             objGroup->init(group, objFactory, grpNode);
@@ -513,88 +519,15 @@ namespace SpellByte
             }
         }
         terrainGroup->freeTemporaryResources();
-        //if(GameCollisionTools)
-        //   GameCollisionTools->terrGroup = terrainGroup;
-        //terrainGroup->saveAllTerrains(false);
+        terrainGroup->saveAllTerrains(false);
     }
 
     void World::createScene()
     {
-        // TBR
-        // create a water plane/scene node
-        /* pWaterEntity = SceneMgr->createEntity("water", "WaterPlane");
-        pWaterEntity->setMaterialName(APP->getConfigString("WaterMat"));
-        SceneNode *waterNode = SceneMgr->getRootSceneNode()->createChildSceneNode("WaterNode");
-        waterNode->attachObject(pWaterEntity);
-        waterNode->translate(0, APP->getConfigFloat("WaterHeight"), 0); */
-        // TBR
-
-        //DotSceneLoader *dsl = new DotSceneLoader();
-        //dsl->parseDotScene("city.scene", "City", SceneMgr);
-        /*goatNode = SceneMgr->getRootSceneNode()->createChildSceneNode("goat");
-        Ogre::DotSceneLoader *dsl = new Ogre::DotSceneLoader();
-        dsl->parseDotScene("goat.scene", "Test", SceneMgr, goatNode);
-        goatNode->setPosition(100, terrainGroup->getHeightAtWorldPosition(100, 0, 100), 100);
-        goatAnimState = SceneMgr->getEntity("geomU3D1")->getAnimationState("my_animation");
-        goatAnimState->setLoop(true);
-        goatAnimState->setEnabled(true);
-        LOG("Anim length: " + Ogre::StringConverter::toString(goatAnimState->getLength()));
-        delete dsl;*/
-
-        //manNode->pitch(Ogre::Radian(90));
-        /*Ogre::AnimationStateSet *animSet = ent->getAllAnimationStates();
-        Ogre::AnimationStateIterator iter = animSet->getAnimationStateIterator();
-        while(iter.hasMoreElements())
-        {
-            LOG("Animation name: " + iter.getNext()->getAnimationName());
-        }
-        manAnimState = ent->getAnimationState("default_skl");
-        manAnimState->setLoop(true);
-        manAnimState->setEnabled(true);*/
-
-        /*Ogre::Entity *ent = SceneMgr->createEntity("male", "MedBaseMaleApril2013.mesh");
-        manNode = SceneMgr->getRootSceneNode()->createChildSceneNode("male");
-        manNode->attachObject(ent);
-        manNode->setScale(.012, .012, .012);
-
-        Ogre::AnimationStateSet *animSet = ent->getAllAnimationStates();
-        Ogre::AnimationStateIterator iter = animSet->getAnimationStateIterator();
-        while(iter.hasMoreElements())
-        {
-            LOG("Animation name: " + iter.getNext()->getAnimationName());
-        }
-
-        std::vector<Ogre::String> entParts;
-        entParts.push_back("BaseArms");
-        entParts.push_back("BaseHands");
-        entParts.push_back("BaseHairC");
-        entParts.push_back("Head");
-        entParts.push_back("Teeth");
-        entParts.push_back("Lowerteeth");
-        entParts.push_back("ThiefHood");
-        entParts.push_back("ThiefTorso");
-        entParts.push_back("ThiefTrousers_MinerMeshExchange_");
-        entParts.push_back("MinerBoots");
-        //entParts.push_back("FarmerTorso");das
-        for(unsigned int i = 0; i < ent->getNumSubEntities(); ++i)
-        {
-            Ogre::SubEntity *sEnt;
-            sEnt = ent->getSubEntity(i);
-            sEnt->setVisible(false);
-        }
-        for(unsigned int i = 0; i < entParts.size(); ++i)
-        {
-            Ogre::SubEntity *sEnt;
-            sEnt = ent->getSubEntity(entParts[i]);
-            sEnt->setVisible(true);
-        }
-        manNode->setPosition(-107.74, terrainGroup->getHeightAtWorldPosition(-107.74, 0, 358.74), 358.74);
-        manAnimState = ent->getAnimationState("NPCLookingAround");
-        manAnimState->setLoop(true);
-        manAnimState->setEnabled(true);*/
     }
 
     bool World::update(const Ogre::FrameEvent &evt) {
+        ActorMgr->update(evt);
         // TBR
         /* Update Water */
         /* float fWaterFlow = FLOW_SPEED * evt.timeSinceLastFrame;

@@ -7,6 +7,7 @@
 #include "CollisionTools.h"
 #include "./utilities/tinyxml2.h"
 #include "Player.h"
+#include "Actor.h"
 #include "ObjectGroup.h"
 #include "coldet/multiobject.h"
 #include "world/WaterMesh.h"
@@ -29,7 +30,6 @@ namespace SpellByte
             NONE = 1<<0,
             STATIC = 1<<1,
         };
-        Ogre::TerrainGroup *terrainGroup;
 
         World();
         ~World();
@@ -59,10 +59,18 @@ namespace SpellByte
         bool update(const Ogre::FrameEvent &evt);
         void handleEvent(int event);
 
+        void setVector3Height(Ogre::Vector3 &source) {
+            source.y = terrainGroup->getHeightAtWorldPosition(source.x, source.y, source.z);
+        }
+
+        Ogre::Real getHeight(Ogre::Real x, Ogre::Real y, Ogre::Real z) {
+            return terrainGroup->getHeightAtWorldPosition(x, y, z);
+        }
+
         // set collision tools
         void setCollisionTool(MOC::CollisionTools *collisionTool)
         {
-            //GameCollisionTools = collisionTool;
+            GameCollisionTools = collisionTool;
         }
 
         virtual void loadData(tinyxml2::XMLElement *dataElt);
@@ -81,6 +89,8 @@ namespace SpellByte
             Ogre::String diffuse;
             Ogre::String normal;
         };
+
+        // world related
         typedef std::vector<WaterCircle*> WaterCircles;
         void loadTerrain(tinyxml2::XMLElement *terrainElt);
         void loadObjects(tinyxml2::XMLElement *worldElt);
@@ -112,6 +122,7 @@ namespace SpellByte
         Ogre::AnimationState *manAnimState;
 
         Ogre::TerrainGlobalOptions *terrainGlobals;
+        Ogre::TerrainGroup *terrainGroup;
         bool terrainsImported;
 
         void defineTerrain(long x, long y);
@@ -147,7 +158,7 @@ namespace SpellByte
         // For independent objects not in group
         std::vector<Object*> WorldObjects;
 
-        //MOC::CollisionTools *GameCollisionTools;
+        MOC::CollisionTools *GameCollisionTools;
 
         std::vector<Ogre::String> heightMaps;
         std::vector<Layer> terrainLayers;

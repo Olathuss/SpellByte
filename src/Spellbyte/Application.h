@@ -3,13 +3,19 @@
 
 #include <map>
 
+#ifdef AUDIO
 #include <AL/al.h>
+#endif
 
 #include "stdafx.h"
 #include "StateManager.h"
 #include "./resources/SpellByteResourceFileManager.h"
 #include "./resources/XMLResourceManager.h"
+#include "./resources/LUAResourceManager.h"
+
+#ifdef AUDIO
 #include "./resources/WAVFileManager.h"
+#endif
 
 namespace SpellByte {
     class World;
@@ -95,7 +101,11 @@ namespace SpellByte {
         // Resource related
         SBResFileManager *SBResourceManager;
         XMLResourceManager *xmlManager;
+        LUAResourceManager *luaManager;
+
+#ifdef AUDIO
         WAVFileManager *wavManager;
+#endif
 
         // CEGUI related
         CEGUI::OgreRenderer *ceguiRenderer;

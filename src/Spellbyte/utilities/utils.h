@@ -3,6 +3,7 @@
 
 #include <cstring>
 #include <vector>
+#include "../stdafx.h"
 #include "tinyxml2.h"
 
 // This functions reads either a BYTE, WORD, or DWORD from a vector of unsigned char
@@ -115,6 +116,12 @@ inline void DeleteSTLContainer(container& c)
   {
     delete *it;
     *it = NULL;
+  }
+}
+
+inline void truncate(Ogre::Vector3 &v, Ogre::Real maxLength) {
+  if(v.squaredLength() > (maxLength * maxLength)) {
+    v = (v.normalisedCopy() * maxLength);
   }
 }
 #endif // _UTILS_H_

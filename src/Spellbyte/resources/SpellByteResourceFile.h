@@ -33,8 +33,6 @@ namespace SpellByte {
         void unloadImpl();
         // Calculates size of resource
         size_t calculateSize() const;
-        // Initialize resources
-        void init();
 
     public:
         SBResFile(Ogre::ResourceManager *creator, const Ogre::String &name,
@@ -42,12 +40,10 @@ namespace SpellByte {
                       bool isManual = false, Ogre::ManualResourceLoader *loader = 0);
         virtual ~SBResFile();
 
-        // This method is here temporarily until new resource is created
-        std::vector<unsigned char> decompress(int data_no) const;
-        // Get memory size
-        size_t getDataSize(Ogre::String name) const;
-        // Get data
-        char *getData(Ogre::String name) const;
+        // Method to decompress resource file
+        unsigned char* decompress(unsigned int data_index) const;
+        // Get data and datasize of resource
+        char *getData(Ogre::String name, size_t &dataSize, int position = -1) const;
 
 
     private:

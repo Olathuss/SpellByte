@@ -22,10 +22,12 @@ LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
 THE SOFTWARE.
 ******************************************************************************************/
-#include "CollisionTools.h"
-#include "Object.h"
 #include <OgreSubMesh.h>
 #include <iostream>
+#include "CollisionTools.h"
+#include "Object.h"
+#include "coldet/coldet.h"
+#include "World.h"
 
 namespace MOC {
 
@@ -48,10 +50,10 @@ CollisionTools::CollisionTools(Ogre::SceneManager *sceneMgr, const ET::TerrainIn
 }
 #endif
 
-CollisionTools::CollisionTools(Ogre::SceneManager *sceneMgr, Ogre::TerrainGroup *tGrp)
+CollisionTools::CollisionTools(Ogre::SceneManager *sceneMgr, SpellByte::World *world)
 {
 	mSceneMgr = sceneMgr;
-	terrGroup = tGrp;
+	worldPtr = world;
 
 	mRaySceneQuery = mSceneMgr->createRayQuery(Ogre::Ray());
     if (NULL == mRaySceneQuery)
@@ -74,6 +76,9 @@ CollisionTools::~CollisionTools()
 
 	if (mTSMRaySceneQuery != NULL)
 		delete mTSMRaySceneQuery;
+
+    if (worldPtr != NULL)
+        worldPtr = NULL;
 }
 
 bool CollisionTools::raycastFromCamera(RenderWindow* rw, Camera* camera, const OIS::MouseEvent &e, Vector3 &result, ulong &target,float &closest_distance, const uint32 queryMask)
@@ -100,7 +105,7 @@ bool CollisionTools::collidesWithEntity(const Vector3& fromPoint, const Vector3&
 	if (raycastFromPoint(fromPointAdj, normal, myResult, (ulong&)myObject, distToColl, queryMask))
 	{
 		distToColl -= collisionRadius;
-		//std::cout << "distToColl: " << distToColl << std::endl;
+		std::cout << "distToColl: " << distToColl << std::endl;
 		return (distToColl <= distToDest);
 	}
 	else
@@ -125,7 +130,7 @@ float CollisionTools::getTSMHeightAt(const float x, const float z) {
     {
         y=i->worldFragment->singleIntersection.y;
     }*/
-    y = terrGroup->getHeightAtWorldPosition(x, 0, z);
+    y = worldPtr->getHeight(x, 0, z);
 	return y;
 }
 
@@ -252,12 +257,21 @@ bool CollisionTools::raycast(const Ray &ray, Vector3 &result,ulong &target,float
         {
             // get the entity to check
 			Ogre::Entity *pentity = static_cast<Ogre::Entity*>(query_result[qr_idx].movable);
+			SpellByte::Object* obj = Ogre::any_cast<SpellByte::Object*>(pentity->getParentSceneNode()->getUserAny());
+			Ogre::Vector3 tmp = ray.getOrigin();
+			float origin[3] = { tmp[0], tmp[1], tmp[2] };
+			tmp = ray.getDirection();
+			float direction[3] = { tmp[0], tmp[1], tmp[2] };
+			if(obj->coldetModel->rayCollision(origin, direction)) {
+                std::cout << "Collision Name: " << obj->getName();
+                return true;
+            }
 			//Ogre::Any any = pentity->getParentSceneNode()->getUserAny();
 			///SpellByte::Object *obj = any_cast<SpellByte::Object*>(any);
 			//std::cout << "Name: " + obj->getName();
 
             // mesh data to retrieve
-            size_t vertex_count;
+            /*size_t vertex_count;
             size_t index_count;
             Ogre::Vector3 *vertices;
             unsigned long *indices;
@@ -291,15 +305,15 @@ bool CollisionTools::raycast(const Ray &ray, Vector3 &result,ulong &target,float
 
 			// free the verticies and indicies memory
             delete[] vertices;
-            delete[] indices;
+            delete[] indices;*/
 
             // if we found a new closest raycast for this o bject, update the
             // closest_result before moving on to the next object.
-            if (new_closest_found)
+            /*if (new_closest_found)
             {
 				target = (ulong)pentity;
                 closest_result = ray.getPoint(closest_distance);
-            }
+            }*/
         }
     }
     // free the verticies and indicies memory

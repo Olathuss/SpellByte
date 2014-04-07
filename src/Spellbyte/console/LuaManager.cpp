@@ -60,18 +60,33 @@ namespace SpellByte
     std::string LuaManager::handleConsoleCmd(std::queue<std::string> cmdQueue)
     {
         std::string lua_text = "";
-        if(cmdQueue.front() == "[")
+        if(!cmdQueue.empty() && !getScript && cmdQueue.front() == "[")
         {
             COMM->setRedirect(this);
             cmdQueue.pop();
             getScript = true;
         }
-        if(getScript && cmdQueue.front() == "]")
+        if(!cmdQueue.empty() && getScript && cmdQueue.front() == "]")
         {
             COMM->clearRedirect();
             cmdQueue.pop();
             getScript = false;
             executeScript = true;
+        }
+        if(!cmdQueue.empty() && cmdQueue.front() == "run") {
+            cmdQueue.pop();
+            lua_text = cmdQueue.front();
+            cmdQueue.pop();
+            std::string group = "LUA";
+            if (!cmdQueue.empty()) {
+                group = cmdQueue.front();
+                cmdQueue.pop();
+            }
+            if (runScript(lua_text, group)) {
+                return "Executed script: " + lua_text;
+            } else {
+                return "Failed to execute script: " + lua_text + "\nFile may not exist.";
+            }
         }
         bool nextItem = !cmdQueue.empty();
         while(nextItem)
@@ -100,6 +115,19 @@ namespace SpellByte
         }
         luaL_dostring(LUA, lua_text.c_str());
         return "Executed: " + lua_text;
+    }
+
+    bool LuaManager::runScript(Ogre::String script, Ogre::String group) {
+        try {
+            LUAResourcePtr luaFile = APP->luaManager->load(script, group);
+            Ogre::String scriptData = luaFile->getLUA();
+            luaL_dostring(LUA, scriptData.c_str());
+            luaFile->unload();
+            return true;
+        } catch (Ogre::Exception &e) {
+            return false;
+        }
+        return false;
     }
 }
 

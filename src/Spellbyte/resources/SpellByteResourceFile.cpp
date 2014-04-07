@@ -31,7 +31,11 @@ namespace SpellByte {
     void SBResFile::loadImpl() {
         // First get datastream from Ogre3d
         Ogre::DataStreamPtr stream = Ogre::ResourceGroupManager::getSingleton().openResource(mName, mGroup, true, this);
-        // Create vector
+        /*
+            Create vector to contain file data for easy array like access
+            Set size of vector so it doesn't have to resize during population
+            as this will slow down the loading process due to reallocation
+        */
         std::vector<unsigned char> fileVector(stream->size());
         // Copy stream into vector
         stream->read(&fileVector[0], stream->size());
@@ -41,14 +45,14 @@ namespace SpellByte {
         unsigned long offset = 0;
         // Copy signature from file into resource header
         ReadFromVector(fHeader.sig, 0, fileVector);
-        offset += sizeof(fHeader.sig);
+        offset += sizeof (fHeader.sig);
 
         // Compare and verify header, if not throw exception
         if (fHeader.sig != fHeader.SIGNATURE) {
             throw(Ogre::Exception(15, "Error, invalid resource file.", "ResourceFile"));
         }
 
-        // Get version
+        // Get resource file version
         ReadFromVector(fHeader.version, offset, fileVector);
         // For now just ignore the version.
         offset += sizeof (fHeader.version);
@@ -56,9 +60,8 @@ namespace SpellByte {
         // Find out how many files are packed into the resource file
         ReadFromVector(dataCount, offset, fileVector);
         offset += sizeof (dataCount);
-        long fileCount = dataCount;//dwordToLong(header.dataCount);
         // Loop through all files and unpack them into resource
-        for (long i = 0; i < fileCount; ++i) {
+        for (unsigned long i = 0; i < dataCount; ++i) {
             ResFileData tmp;
             // Get length of resource's file name
             ReadFromVector(tmp.fileNameLen, offset, fileVector);
@@ -67,9 +70,9 @@ namespace SpellByte {
             char* buffer = new char[tmp.fileNameLen + 1];
             // copy it into the buffer
             memcpy(buffer, &fileVector[offset], tmp.fileNameLen);
-            // Append character to signify end of string, otherwise
+            // Append character to signify end of c-string, otherwise
             // there will be a crash later on
-            buffer[tmp.fileNameLen] = 0;
+            buffer[tmp.fileNameLen] = '\0';
             // Make a string and add it to file data
             tmp.fileName = Ogre::String(buffer);
             offset += tmp.fileNameLen;
@@ -91,23 +94,26 @@ namespace SpellByte {
                 ReadFromVector(tmp.decompressedLength, offset, fileVector);
                 offset += sizeof(tmp.decompressedLength);
             }
+
+            /*
+                Inform Ogre3D's Resource Manager that a new resource is available for loading,
+                when the resource is then loaded during runtime, resource manager will use the
+                appropriate manual resource loader for the resource.
+            */
+            LOG("SBResource declaring resource: " + Ogre::String(tmp.fileName));
+            if (tmp.dataFormat == MESHFile) {
+                // File is MESH file, so declare manual mesh resource.
+                manualMeshLoader *mml = new manualMeshLoader(this->getName(), (unsigned int)i);
+                Ogre::MeshManager::getSingleton().createManual(tmp.fileName, "SpellByteResource", mml);
+            }
+            if(tmp.dataFormat == XMLFile) {
+                // Resource is XML file, so declare manual xml loader.
+                manualXMLLoader *xml = new manualXMLLoader(this->getName(), (unsigned int)i);
+                Ogre::ResourceGroupManager::getSingleton().declareResource(tmp.fileName, "XMLResource", "General", xml);
+            }
+
             // Push file struct into vector
             Data.push_back(tmp);
-        }
-        init();
-    }
-
-    void SBResFile::init() {
-        for (unsigned int i = 0; i < Data.size(); ++i) {
-            LOG("SBResource declaring resource: " + Ogre::String(Data[i].fileName));
-            if (Data[i].dataFormat == MESHFile) {
-                manualMeshLoader *mml = new manualMeshLoader(this->getName(), i);
-                Ogre::MeshManager::getSingleton().createManual(Data[i].fileName, "SpellByteResource", mml);
-            }
-            if(Data[i].dataFormat == XMLFile) {
-                manualXMLLoader *xml = new manualXMLLoader(this->getName(), i);
-                Ogre::ResourceGroupManager::getSingleton().declareResource(Data[i].fileName, "XMLResource", "General", xml);
-            }
         }
     }
 
@@ -118,71 +124,66 @@ namespace SpellByte {
     size_t SBResFile::calculateSize() const {
         // Calculate the total memory used by this class
         // And send it to resource manager
-        size_t mySize = sizeof (fHeader);
-        ResFileData tmpForSizeof;
-        mySize += sizeof(tmpForSizeof.fileNameLen) * Data.size();
-        mySize += sizeof(tmpForSizeof.dataFormat) * Data.size();
-        mySize += sizeof(tmpForSizeof.compressed) * Data.size();
-        mySize += sizeof(tmpForSizeof.dataLength) * Data.size();
+        size_t totalSize = sizeof (ResFileHeader) + sizeof (ResFileData) * Data.size();
         for (unsigned int i = 0; i < Data.size(); ++i) {
-            mySize += Data[i].fileName.size();
-            mySize += Data[i].dataLength;
+            totalSize += Data[i].fileName.size();
+            totalSize += Data[i].dataLength;
         }
-        return mySize;
+        return totalSize;
     }
 
-    // Pass of datasize of specific resource name
-    // This can be optimized later to use the actual
-    // position and not have to iterate through vector
-    size_t SBResFile::getDataSize(Ogre::String name) const {
-        for(unsigned int i = 0; i < Data.size(); ++i) {
-            if (Data[i].fileName == name) {
-                if (Data[i].compressed == NOT_COMPRESSED)
-                    return Data[i].dataLength;
-                else if (Data[i].compressed == COMPRESSED)
-                    return Data[i].decompressedLength;
+    /*
+        Get the data and its allocated size
+        Position is optional and used to optimized so the resource
+        doesn't have to search for it.
+    */
+    char *SBResFile::getData(Ogre::String name, size_t &dataSize, int position) const {
+        unsigned int filePosition = 0;
+        if (position < 0) {
+            for (filePosition = 0; filePosition < Data.size(); ++filePosition)
+                if (Data[filePosition].fileName == name)
+                    break;
+        } else {
+            filePosition = (unsigned int)position;
+            if (Data[filePosition].fileName != name) {
+                throw(Ogre::Exception(15, "Invalid resource filename", "ResourceFile"));
             }
         }
-        return 0;
-    }
 
-    // Similar to above except returns data
-    char *SBResFile::getData(Ogre::String name) const {
-        for(unsigned int i = 0; i < Data.size(); ++i) {
-            if (Data[i].fileName == name) {
-                if (Data[i].compressed == COMPRESSED) {
-                    std::vector<unsigned char> unCompressed = decompress(i);
-                    char* tmp = new char[unCompressed.size()];
-                    memcpy(tmp, &unCompressed[0], unCompressed.size());
-                    return tmp;
-                } else {
-                    char* tmp = new char[Data[i].dataLength];
-                    memcpy(tmp, &Data[i].data[0], Data[i].dataLength);
-                    return tmp;
-                }
-            }
+        // Check whether data is compressed
+        if (Data[filePosition].compressed == COMPRESSED) {
+            // Set datasize equal to file's decompressed size/length
+            dataSize = Data[filePosition].decompressedLength;
+            // Decompress data and return it
+            return reinterpret_cast<char*>(decompress(filePosition));
+        } else {
+            dataSize = Data[filePosition].dataLength;
+            // Receiver is responsible for deleting char*
+            char* tmp = new char[Data[filePosition].dataLength];
+            // Copy data from vector into char*
+            memcpy(tmp, &Data[filePosition].data[0], Data[filePosition].dataLength);
+            return tmp;
         }
+        // Safeguard, return NULL if an unknown problem occurs
         return NULL;
     }
 
-    // This is kept here to demonstrate how to
-    // uncompress data within the resource file
-    std::vector<unsigned char> SBResFile::decompress(int data_no) const {
+    // Helper method to decompress resource data
+    unsigned char* SBResFile::decompress(unsigned int data_index) const {
         // Get data length
-        ezbuffer bufSrc( Data[data_no].dataLength );
+        ezbuffer bufSrc(Data[data_index].dataLength);
         // Copy data from vector into buffer
-        memcpy(bufSrc.pBuf, &Data[data_no].data[0], bufSrc.nLen);
+        memcpy(bufSrc.pBuf, &Data[data_index].data[0], bufSrc.nLen);
         ezbuffer bufDest;
 
         // Decompress data
         int ezErr = ezuncompress( bufDest, bufSrc );
 
         // If error, throw ogre exception
-        if(ezErr < 0)
+        if (ezErr < 0)
             throw(Ogre::Exception(15, "Error during decompression", "ResourceFile"));
 
-        // Copy uncompressed data into vector and return
-        std::vector<unsigned char> uctmp( bufDest.pBuf, bufDest.pBuf + bufDest.nLen );
-        return uctmp;
+        // Return
+        return bufDest.pBuf;
     }
 }

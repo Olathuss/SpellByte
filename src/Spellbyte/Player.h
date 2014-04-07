@@ -5,6 +5,7 @@
 #include "stdafx.h"
 #include "Subscriber.h"
 #include "CollisionTools.h"
+#include "coldet/coldet.h"
 
 namespace SpellByte
 {
@@ -23,7 +24,7 @@ namespace SpellByte
         void handleEvent(int);
 
         Ogre::SceneNode *getCameraNode();
-        void setCollisionHanlder(MOC::CollisionTools *ct);
+        void setCollisionHandler(MOC::CollisionTools *ct);
 
         Ogre::String getDebugString();
         const Ogre::Vector3 getPosition();
@@ -59,8 +60,13 @@ namespace SpellByte
         int PlayerAction;
 
         // Collision Handling
-        //MOC::CollisionTools *collisionHandler;
-        //bool enabledCollision;
+        MOC::CollisionTools *collisionHandler;
+        bool enabledCollision;
+        float collisionRadius;
+        int collisionMask;
+        Ogre::SceneNode *collisionNode;
+        CollisionModel3D *collisionModel;
+        void updateCollisionModel();
 
         // For FPS controls
         Ogre::Vector3 translateVector;
@@ -72,9 +78,6 @@ namespace SpellByte
         Ogre::Real playerHeight;
         Ogre::Real moveSpeed;
         void moveCamera();
-
-        float collisionRadius;
-        int collisionMask;
 
         World *GameWorld;
     };

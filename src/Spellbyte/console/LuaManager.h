@@ -30,6 +30,9 @@ namespace SpellByte
         LuaManager();
         LuaManager &operator=(const LuaManager&);
         LuaManager(const LuaManager&);
+
+        bool runScript(Ogre::String script, Ogre::String group="LUA");
+
         static LuaManager *Instance;
         std::string embedScript;
         bool getScript;

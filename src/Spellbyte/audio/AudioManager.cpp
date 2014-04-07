@@ -1,3 +1,5 @@
+#ifdef AUDIO
+
 #include <cstdio>
 #include "AudioManager.h"
 
@@ -146,3 +148,4 @@ namespace SpellByte {
     }
 }
 
+#endif

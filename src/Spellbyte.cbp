@@ -116,6 +116,11 @@
 		<Unit filename="Spellbyte/Subscriber.h" />
 		<Unit filename="Spellbyte/World.cpp" />
 		<Unit filename="Spellbyte/World.h" />
+		<Unit filename="Spellbyte/actor/State.h" />
+		<Unit filename="Spellbyte/actor/StateMachine.h" />
+		<Unit filename="Spellbyte/actor/SteeringBehaviors.cpp" />
+		<Unit filename="Spellbyte/actor/SteeringBehaviors.h" />
+		<Unit filename="Spellbyte/actor/WanderState.h" />
 		<Unit filename="Spellbyte/audio/AudioManager.cpp" />
 		<Unit filename="Spellbyte/audio/AudioManager.h" />
 		<Unit filename="Spellbyte/coldet/bitmatrix.h" />
@@ -148,6 +153,10 @@
 		<Unit filename="Spellbyte/define.h" />
 		<Unit filename="Spellbyte/error_defines.h" />
 		<Unit filename="Spellbyte/main.cpp" />
+		<Unit filename="Spellbyte/resources/LUAResourceFile.cpp" />
+		<Unit filename="Spellbyte/resources/LUAResourceFile.h" />
+		<Unit filename="Spellbyte/resources/LUAResourceManager.cpp" />
+		<Unit filename="Spellbyte/resources/LUAResourceManager.h" />
 		<Unit filename="Spellbyte/resources/ManualLoaders.h" />
 		<Unit filename="Spellbyte/resources/SpellByteResourceFile.cpp" />
 		<Unit filename="Spellbyte/resources/SpellByteResourceFile.h" />
@@ -189,8 +198,6 @@
 		<Unit filename="Spellbyte/utilities/tinyxml2.h" />
 		<Unit filename="Spellbyte/utilities/utils.h" />
 		<Unit filename="Spellbyte/world/MaterialControls.h" />
-		<Unit filename="Spellbyte/world/Ocean.cpp" />
-		<Unit filename="Spellbyte/world/Ocean.h" />
 		<Unit filename="Spellbyte/world/Water.cpp" />
 		<Unit filename="Spellbyte/world/Water.h" />
 		<Unit filename="Spellbyte/world/WaterMesh.cpp" />
@@ -200,6 +207,15 @@
 			<envvars />
 			<debugger />
 			<lib_finder disable_auto="1" />
+			<DoxyBlocks>
+				<comment_style block="1" line="1" />
+				<doxyfile_project project_number="1.0" output_directory="docs\doxygen" />
+				<doxyfile_build extract_all="1" />
+				<doxyfile_warnings warn_if_undocumented="1" />
+				<doxyfile_output />
+				<doxyfile_dot />
+				<general />
+			</DoxyBlocks>
 		</Extensions>
 	</Project>
 </CodeBlocks_project_file>

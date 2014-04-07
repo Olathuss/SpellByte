@@ -41,6 +41,10 @@ THE SOFTWARE.
 
 using namespace Ogre;
 
+namespace SpellByte {
+    class World;
+}
+
 namespace MOC {
 
 class CollisionTools {
@@ -49,14 +53,14 @@ public:
 	Ogre::RaySceneQuery *mTSMRaySceneQuery;
 
 	SceneManager *mSceneMgr;
-	TerrainGroup *terrGroup;
+	SpellByte::World *worldPtr;
 
 #ifdef ETM_TERRAIN
 	const ET::TerrainInfo* mTerrainInfo;
 	CollisionTools(Ogre::SceneManager *sceneMgr, const ET::TerrainInfo* terrainInfo);
 #endif
 
-	CollisionTools(Ogre::SceneManager *sceneMgr, Ogre::TerrainGroup *tGrp);
+	CollisionTools(Ogre::SceneManager *sceneMgr, SpellByte::World *world);
 	~CollisionTools();
 
 	bool raycastFromCamera(RenderWindow* rw, Camera* camera, const OIS::MouseEvent &e, Vector3 &result, ulong &target,float &closest_distance, const uint32 queryMask = 0xFFFFFFFF);

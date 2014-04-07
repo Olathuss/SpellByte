@@ -22,7 +22,9 @@
 #include "states/PlayMenuState.h"
 #include "ControlManager.h"
 
+#ifdef AUDIO
 #include "audio/AudioManager.h"
+#endif
 
 namespace SpellByte {
     template<> Application* Ogre::Singleton<Application>::msSingleton = 0;
@@ -39,7 +41,10 @@ namespace SpellByte {
         SceneMgr(0),
         SBResourceManager(0),
         xmlManager(0),
+        luaManager(0),
+#ifdef AUDIO
         wavManager(0),
+#endif
         ceguiRenderer(0),
         ceguiContext(0),
         GameStateManager(0) {
@@ -76,10 +81,19 @@ namespace SpellByte {
 
         if (InputMgr)
             OIS::InputManager::destroyInputSystem(InputMgr);
+
+#ifdef AUDIO
         if (wavManager) {
             delete Ogre::ResourceGroupManager::getSingleton()._getResourceManager("WAVFile");
             wavManager = 0;
         }
+#endif
+
+        if (luaManager) {
+            delete Ogre::ResourceGroupManager::getSingleton()._getResourceManager("LUAResource");
+            luaManager = 0;
+        }
+
         if (xmlManager) {
             delete Ogre::ResourceGroupManager::getSingleton()._getResourceManager("XMLResource");
             xmlManager = 0;
@@ -121,8 +135,10 @@ namespace SpellByte {
             //LOG("Update GameStateManager");
             GameStateManager->update(evt);
 
-            // Update AudioManager to remove sounds which aren't playing
+#ifdef AUDIO
+            // Update AudioManager
             AUDIOMAN->update(evt);
+#endif
 
             // If Window is closed, then quit
             //LOG("Check RenderWindow closed");
@@ -155,9 +171,11 @@ namespace SpellByte {
         bindToLUA();
         LOG("LUA Initialization Complete");
 
+#ifdef AUDIO
         LOG("Initializing AudioManager");
         AUDIOMAN->init();
         LOG("AudioManager Initialized");
+#endif
 
         // Create Ogre scene manager
         SceneMgr = OgreRoot->createSceneManager(Ogre::ST_GENERIC, "SpellByteSceneMgr");
@@ -365,10 +383,14 @@ namespace SpellByte {
             return false;
         }
 
-        // Create SpellByte Resource and XML Managers
+        // Create SpellByte Manual Resource Managers
         SBResourceManager = new SBResFileManager();
         xmlManager = new XMLResourceManager();
+        luaManager = new LUAResourceManager();
+
+#ifdef AUDIO
         wavManager = new WAVFileManager();
+#endif
 
         // Declare default resource file, may want to specificy in SpellByte XML config?
         Ogre::ResourceGroupManager::getSingleton().declareResource("resource.spb", "SBResourceFile");
@@ -652,6 +674,13 @@ namespace SpellByte {
             .set("getConfigFloat", &Application::getConfigFloat)
             .set("getConfigString", &Application::getConfigString)
             .set("getString", &Application::getString);
+
+        SLB::Class< Ogre::Vector3 >("Vector3")
+            .constructor()
+            .property("x", &Ogre::Vector3::x)
+            .property("y", &Ogre::Vector3::y)
+            .property("z", &Ogre::Vector3::z)
+            .set("distance", &Ogre::Vector3::distance);
 
         // Set global access to LUA
         SLB::setGlobal<Application*>(&(*LUAMANAGER->LUA), APP, "app");

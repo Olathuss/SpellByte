@@ -15,98 +15,124 @@ namespace SpellByte {
                         const Ogre::Quaternion &orient,
                         const Ogre::Vector3 &scale)
     {
-    bool added_shared = false;
-    size_t current_offset = 0;
-    size_t shared_offset = 0;
-    size_t next_offset = 0;
-    size_t index_offset = 0;
+        bool added_shared = false;
+        size_t current_offset = 0;
+        size_t shared_offset = 0;
+        size_t next_offset = 0;
+        size_t index_offset = 0;
 
-    vertex_count = index_count = 0;
+        vertex_count = index_count = 0;
 
-    // Calculate how many vertices and indices we're going to need
-    for ( unsigned short i = 0; i < mesh->getNumSubMeshes(); ++i) {
-        Ogre::SubMesh* submesh = mesh->getSubMesh(i);
-        // We only need to add the shared vertices once
-        if(submesh->useSharedVertices) {
-            if( !added_shared ) {
-                vertex_count += mesh->sharedVertexData->vertexCount;
-                added_shared = true;
-            }
-        } else {
-            vertex_count += submesh->vertexData->vertexCount;
-        }
-        // Add the indices
-        index_count += submesh->indexData->indexCount;
-    }
-
-    // Allocate space for the vertices and indices
-    vertices = new Ogre::Vector3[vertex_count];
-    indices = new unsigned long[index_count];
-
-    added_shared = false;
-
-    // Run through the submeshes again, adding the data into the arrays
-    for (unsigned short i = 0; i < mesh->getNumSubMeshes(); ++i) {
-        Ogre::SubMesh* submesh = mesh->getSubMesh(i);
-
-        Ogre::VertexData* vertex_data = submesh->useSharedVertices ? mesh->sharedVertexData : submesh->vertexData;
-
-        if ((!submesh->useSharedVertices) || (submesh->useSharedVertices && !added_shared)) {
+        // Calculate how many vertices and indices we're going to need
+        for ( unsigned short i = 0; i < mesh->getNumSubMeshes(); ++i) {
+            Ogre::SubMesh* submesh = mesh->getSubMesh(i);
+            // We only need to add the shared vertices once
             if(submesh->useSharedVertices) {
-                added_shared = true;
-                shared_offset = current_offset;
+                if( !added_shared ) {
+                    vertex_count += mesh->sharedVertexData->vertexCount;
+                    added_shared = true;
+                }
+            } else {
+                vertex_count += submesh->vertexData->vertexCount;
             }
-
-            const Ogre::VertexElement* posElem =
-                vertex_data->vertexDeclaration->findElementBySemantic(Ogre::VES_POSITION);
-
-            Ogre::HardwareVertexBufferSharedPtr vbuf =
-                vertex_data->vertexBufferBinding->getBuffer(posElem->getSource());
-
-            unsigned char* vertex =
-                static_cast<unsigned char*>(vbuf->lock(Ogre::HardwareBuffer::HBL_READ_ONLY));
-
-            // There is _no_ baseVertexPointerToElement() which takes an Ogre::Real or a double
-            //  as second argument. So make it float, to avoid trouble when Ogre::Real will
-            //  be comiled/typedefed as double:
-            //Ogre::Real* pReal;
-            float* pReal;
-
-            for( size_t j = 0; j < vertex_data->vertexCount; ++j, vertex += vbuf->getVertexSize()) {
-                posElem->baseVertexPointerToElement(vertex, &pReal);
-                Ogre::Vector3 pt(pReal[0], pReal[1], pReal[2]);
-                vertices[current_offset + j] = (orient * (pt * scale)) + position;
-            }
-
-            vbuf->unlock();
-            next_offset += vertex_data->vertexCount;
+            // Add the indices
+            index_count += submesh->indexData->indexCount;
         }
 
-        Ogre::IndexData* index_data = submesh->indexData;
-        size_t numTris = index_data->indexCount / 3;
-        Ogre::HardwareIndexBufferSharedPtr ibuf = index_data->indexBuffer;
+        // Allocate space for the vertices and indices
+        vertices = new Ogre::Vector3[vertex_count];
+        indices = new unsigned long[index_count];
 
-        bool use32bitindexes = (ibuf->getType() == Ogre::HardwareIndexBuffer::IT_32BIT);
+        added_shared = false;
 
-        unsigned long* pLong = static_cast<unsigned long*>(ibuf->lock(Ogre::HardwareBuffer::HBL_READ_ONLY));
-        unsigned short* pShort = reinterpret_cast<unsigned short*>(pLong);
+        // Run through the submeshes again, adding the data into the arrays
+        for (unsigned short i = 0; i < mesh->getNumSubMeshes(); ++i) {
+            Ogre::SubMesh* submesh = mesh->getSubMesh(i);
 
-        size_t offset = (submesh->useSharedVertices)? shared_offset : current_offset;
+            Ogre::VertexData* vertex_data = submesh->useSharedVertices ? mesh->sharedVertexData : submesh->vertexData;
 
-        if ( use32bitindexes ) {
-            for ( size_t k = 0; k < numTris*3; ++k) {
-                indices[index_offset++] = pLong[k] + static_cast<unsigned long>(offset);
+            if ((!submesh->useSharedVertices) || (submesh->useSharedVertices && !added_shared)) {
+                if(submesh->useSharedVertices) {
+                    added_shared = true;
+                    shared_offset = current_offset;
+                }
+
+                const Ogre::VertexElement* posElem =
+                    vertex_data->vertexDeclaration->findElementBySemantic(Ogre::VES_POSITION);
+
+                Ogre::HardwareVertexBufferSharedPtr vbuf =
+                    vertex_data->vertexBufferBinding->getBuffer(posElem->getSource());
+
+                unsigned char* vertex =
+                    static_cast<unsigned char*>(vbuf->lock(Ogre::HardwareBuffer::HBL_READ_ONLY));
+
+                // There is _no_ baseVertexPointerToElement() which takes an Ogre::Real or a double
+                //  as second argument. So make it float, to avoid trouble when Ogre::Real will
+                //  be comiled/typedefed as double:
+                //Ogre::Real* pReal;
+                float* pReal;
+
+                for( size_t j = 0; j < vertex_data->vertexCount; ++j, vertex += vbuf->getVertexSize()) {
+                    posElem->baseVertexPointerToElement(vertex, &pReal);
+                    Ogre::Vector3 pt(pReal[0], pReal[1], pReal[2]);
+                    vertices[current_offset + j] = (orient * (pt * scale)) + position;
+                }
+
+                vbuf->unlock();
+                next_offset += vertex_data->vertexCount;
             }
-        } else {
-            for ( size_t k = 0; k < numTris*3; ++k) {
-                indices[index_offset++] = static_cast<unsigned long>(pShort[k]) +
-                                          static_cast<unsigned long>(offset);
+
+            Ogre::IndexData* index_data = submesh->indexData;
+            size_t numTris = index_data->indexCount / 3;
+            Ogre::HardwareIndexBufferSharedPtr ibuf = index_data->indexBuffer;
+
+            bool use32bitindexes = (ibuf->getType() == Ogre::HardwareIndexBuffer::IT_32BIT);
+
+            unsigned long* pLong = static_cast<unsigned long*>(ibuf->lock(Ogre::HardwareBuffer::HBL_READ_ONLY));
+            unsigned short* pShort = reinterpret_cast<unsigned short*>(pLong);
+
+            size_t offset = (submesh->useSharedVertices)? shared_offset : current_offset;
+
+            if ( use32bitindexes ) {
+                for ( size_t k = 0; k < numTris*3; ++k) {
+                    indices[index_offset++] = pLong[k] + static_cast<unsigned long>(offset);
+                }
+            } else {
+                for ( size_t k = 0; k < numTris*3; ++k) {
+                    indices[index_offset++] = static_cast<unsigned long>(pShort[k]) +
+                                              static_cast<unsigned long>(offset);
+                }
             }
+
+            ibuf->unlock();
+            current_offset = next_offset;
         }
-
-        ibuf->unlock();
-        current_offset = next_offset;
     }
+
+    // This method adds the object's mesh into the coldetModel
+    void addTrianglesToColdet(Ogre::Entity *entity, CollisionModel3D *coldetModel) {
+        size_t vertex_count, index_count;
+        Ogre::Vector3 *vertices;
+        unsigned long *indices;
+
+        // Get triangle/vertex information
+        getMeshInformation(entity->getMesh().get(), vertex_count, vertices, index_count, indices,
+                           Ogre::Vector3::ZERO, Ogre::Quaternion::IDENTITY,
+                           Ogre::Vector3::UNIT_SCALE);
+
+        coldetModel->setTriangleNumber(index_count / 3);
+        // Loop through triangles and add to physics model
+        for(size_t i = 0; i < index_count; i += 3) {
+            // Each triangle has three vertices of 3 floats each, so 9 total
+            const float triangle[9] = { vertices[indices[i]][0], vertices[indices[i]][1], vertices[indices[i]][2],
+                                        vertices[indices[i + 1]][0], vertices[indices[i + 1]][1], vertices[indices[i + 1]][2],
+                                        vertices[indices[i + 2]][0], vertices[indices[i + 2]][1], vertices[indices[i + 2]][2] };
+
+            coldetModel->addTriangle(&triangle[0], &triangle[3], &triangle[6]);
+        }
+        // Remove allocated memory
+        delete[] vertices;
+        delete[] indices;
     }
 
     // Only bind to LUA once
@@ -180,7 +206,7 @@ namespace SpellByte {
             LOG("Loading mesh: " + meshFile);
             // Create entity with mesh
             Ogre::Entity* entity = addEntity(meshFile, meshGroup);
-            addTrianglesToColdet(entity);
+            addTrianglesToColdet(entity, coldetModel);
             coldetModel->finalize();
             if (entity != NULL) {
                 // Check to see if entity requires material
@@ -259,19 +285,6 @@ namespace SpellByte {
             }
         }
 
-        // Load position and set dependent on Y_SNAP
-        float x, y, z;
-        x = y = z = 0.0;
-        loadPosition(objElt, x, y, z);
-        if (ysnap == Y_ABSOLUTE) {
-            ObjectNode->setPosition(x, y, z);
-        } else if (ysnap == Y_RELATIVE) {
-            y += WorldPtr->terrainGroup->getHeightAtWorldPosition(x, y, z);
-            ObjectNode->setPosition(x, y, z);
-        } else {
-            ObjectNode->setPosition(x, WorldPtr->terrainGroup->getHeightAtWorldPosition(x, y, z), z);
-        }
-
         // Now load rotation
         // Rotation can be either YAW/PITCH/ROLL or QUATERNION
         float roll, pitch, yaw, qw, qx, qy, qz;
@@ -305,18 +318,49 @@ namespace SpellByte {
              "[" + Ogre::StringConverter::toString(matrix4[i][3]) + "]");
         }*/
 
-        /*matrix4 = ObjectNode->_getFullTransform().transpose();
-        LOG("MATRIX.transpose(): ");
+        // Load position and set dependent on Y_SNAP
+        float x, y, z;
+        x = y = z = 0.0;
+        loadPosition(objElt, x, y, z);
+        if (ysnap == Y_ABSOLUTE) {
+            ObjectNode->setPosition(x, y, z);
+        } else if (ysnap == Y_RELATIVE) {
+            y += WorldPtr->getHeight(x, y, z);
+            ObjectNode->setPosition(x, y, z);
+        } else {
+            ObjectNode->setPosition(x, WorldPtr->getHeight(x, y, z), z);
+        }
+
+        if (loadScale(objElt, x, y, z)) {
+            ObjectNode->setScale(x, y, z);
+        }
+
+        ObjectNode->needUpdate();
+
+        Ogre::Matrix4 matrix4 = ObjectNode->_getFullTransform().transpose();
+        /*LOG("MATRIX.transpose(): ");
         for(int i = 0; i < 4; i++) {
              LOG("[" + Ogre::StringConverter::toString(matrix4[i][0]) + "]" +
              "[" + Ogre::StringConverter::toString(matrix4[i][1]) + "]" +
              "[" + Ogre::StringConverter::toString(matrix4[i][2]) + "]" +
              "[" + Ogre::StringConverter::toString(matrix4[i][3]) + "]");
         }*/
-
-        if (loadScale(objElt, x, y, z)) {
-            ObjectNode->setScale(x, y, z);
+        //matrix[4][4];
+        float matrix[16];
+        //Ogre::Matrix4 matrix4 = ObjectNode->_getFullTransform().transpose();
+        for(int i = 0; i < 4; i++) {
+            for(int j = 0; j < 4; j++) {
+                matrix[j + (i * 4)] = matrix4[i][j];
+            }
         }
+        /*for(int i = 0; i < 16; i++) {
+            LOG(Ogre::StringConverter::toString(matrix[i]));
+        }*/
+        coldetModel->setTransform(matrix);
+
+        //Ogre::Vector3 obj_pos = ObjectNode->getPosition();
+        //float pos[3] = { obj_pos.x, obj_pos.y, obj_pos.z };
+        //coldetID = WorldPtr->worldObjectSystem->add_object(coldetModel, pos);
 
         /*matrix4 = ObjectNode->_getFullTransform();
         LOG("!!!MATRIX: ");
@@ -326,6 +370,8 @@ namespace SpellByte {
              "[" + Ogre::StringConverter::toString(matrix4[i][2]) + "]" +
              "[" + Ogre::StringConverter::toString(matrix4[i][3]) + "]");
         }*/
+
+        //worldPtr->worldObjectSystem->add_object(coldetModel)
 
         return true;
     }
@@ -435,12 +481,6 @@ namespace SpellByte {
 
     void Object::handleMessage(const Telegram &msg) {
         // Handle message code for actor here
-
-        // Pass message to each component
-        std::map<componentType, ComponentPtr>::iterator it;
-        for(it = components.begin(); it != components.end(); ++it) {
-            it->second->handleMessage(msg);
-        }
     }
 
     // Add entity
@@ -463,9 +503,9 @@ namespace SpellByte {
     void Object::resetY() {
         Ogre::Vector3 newPosition = ObjectNode->_getDerivedPosition();
         if (ysnap == Y_TERRAIN) {
-            newPosition.y = WorldPtr->terrainGroup->getHeightAtWorldPosition(newPosition.x, newPosition.y, newPosition.z);
+            newPosition.y = WorldPtr->getHeight(newPosition.x, newPosition.y, newPosition.z);
         } else if (ysnap == Y_RELATIVE) {
-            newPosition.y += WorldPtr->terrainGroup->getHeightAtWorldPosition(newPosition.x, newPosition.y, newPosition.z);
+            newPosition.y += WorldPtr->getHeight(newPosition.x, newPosition.y, newPosition.z);
         }
         ObjectNode->_setDerivedPosition(newPosition);
     }
@@ -473,9 +513,9 @@ namespace SpellByte {
     // Set position of Object based on Ogre::Real XYZ
     void Object::setPosition(Ogre::Real x, Ogre::Real y, Ogre::Real z) {
         if(ysnap == Y_TERRAIN) {
-            y = WorldPtr->terrainGroup->getHeightAtWorldPosition(x, y, z);
+            y = WorldPtr->getHeight(x, y, z);
         } else if(ysnap == Y_RELATIVE) {
-            y += WorldPtr->terrainGroup->getHeightAtWorldPosition(x, y, z);
+            y += WorldPtr->getHeight(x, y, z);
         }
         ObjectNode->setPosition(x, y, z);
     }
@@ -483,9 +523,9 @@ namespace SpellByte {
     // Set position based on Vector3
     void Object::setPosition(Ogre::Vector3 newPosition) {
         if(ysnap == Y_TERRAIN) {
-            newPosition.y = WorldPtr->terrainGroup->getHeightAtWorldPosition(newPosition.x, newPosition.y, newPosition.z);
+            newPosition.y = WorldPtr->getHeight(newPosition.x, newPosition.y, newPosition.z);
         } else if(ysnap == Y_RELATIVE) {
-            newPosition.y += WorldPtr->terrainGroup->getHeightAtWorldPosition(newPosition.x, newPosition.y, newPosition.z);
+            newPosition.y += WorldPtr->getHeight(newPosition.x, newPosition.y, newPosition.z);
         }
         ObjectNode->setPosition(newPosition);
     }
@@ -515,31 +555,5 @@ namespace SpellByte {
 
     int Object::getNextValidID() {
         return nextValidID;
-    }
-
-    // This method adds the object's mesh into the coldetModel
-    void Object::addTrianglesToColdet(Ogre::Entity *entity) {
-        size_t vertex_count, index_count;
-        Ogre::Vector3 *vertices;
-        unsigned long *indices;
-
-        // Get triangle/vertex information
-        getMeshInformation(entity->getMesh().get(), vertex_count, vertices, index_count, indices,
-                           Ogre::Vector3::ZERO, Ogre::Quaternion::IDENTITY,
-                           Ogre::Vector3::UNIT_SCALE);
-
-        coldetModel->setTriangleNumber(index_count / 3);
-        // Loop through triangles and add to physics model
-        for(size_t i = 0; i < index_count; i += 3) {
-            // Each triangle has three vertices of 3 floats each, so 9 total
-            const float triangle[9] = { vertices[indices[i]][0], vertices[indices[i]][1], vertices[indices[i]][2],
-                                        vertices[indices[i + 1]][0], vertices[indices[i + 1]][1], vertices[indices[i + 1]][2],
-                                        vertices[indices[i + 2]][0], vertices[indices[i + 2]][1], vertices[indices[i + 2]][2] };
-
-            coldetModel->addTriangle(&triangle[0], &triangle[3], &triangle[6]);
-        }
-        // Remove allocated memory
-        delete[] vertices;
-        delete[] indices;
     }
 }

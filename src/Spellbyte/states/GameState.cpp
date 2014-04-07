@@ -7,7 +7,7 @@ namespace SpellByte
     {
         debugBox = NULL;
         rootWindow = NULL;
-        //mCollisionTools = 0;
+        mCollisionTools = 0;
         Quit = false;
     }
 
@@ -30,23 +30,22 @@ namespace SpellByte
         APP->Viewport->setCamera(Camera);
         APP->ceguiContext->getMouseCursor().hide();
 
-        player.init(SceneMgr, Camera, &gameWorld);
-
         //CameraMan = new OgreBites::SdkCameraMan(Camera);
 
         gameWorld.init(Camera, &player);
         gameWorld.loadWorld(APP->getConfigString("world"));
+        player.init(SceneMgr, Camera, &gameWorld);
         LOG("Building GUI");
         buildGUI();
         LOG("GUI complete");
         LOG("Creating scene");
         createScene();
         LOG("Scene creation complete");
-        //LOG("Initializing collision tools");
-        //mCollisionTools = new MOC::CollisionTools(SceneMgr, gameWorld.terrainGroup);
-        //player.setCollisionHanlder(mCollisionTools);
-        //gameWorld.setCollisionTool(mCollisionTools);
-        //LOG("Collision tools initialization complete");
+        LOG("Initializing collision tools");
+        mCollisionTools = new MOC::CollisionTools(SceneMgr, &gameWorld);
+        player.setCollisionHandler(mCollisionTools);
+        gameWorld.setCollisionTool(mCollisionTools);
+        LOG("Collision tools initialization complete");
     }
 
     bool GameState::pause()
@@ -75,10 +74,10 @@ namespace SpellByte
 
         destroyScene();
 
-        //if(mCollisionTools)
-        //{
-        //    delete mCollisionTools;
-        //}
+        if(mCollisionTools)
+        {
+            delete mCollisionTools;
+        }
 
         SceneMgr->destroyCamera(Camera);
 
