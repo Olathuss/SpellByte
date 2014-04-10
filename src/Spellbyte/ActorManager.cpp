@@ -4,7 +4,7 @@
 #include "console/LuaManager.h"
 
 namespace SpellByte {
-    ActorManager* ActorManager::Instance = nullptr;
+    ActorManager *ActorManager::Instance = nullptr;
     unsigned int ActorManager::ActorCount = 0;
 
     ActorManager::ActorManager() {

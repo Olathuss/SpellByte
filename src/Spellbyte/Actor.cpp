@@ -5,25 +5,28 @@
 #include "define.h"
 #include "World.h"
 #include "actor/WanderState.h"
+#include "audio/AudioManager.h"
+#include "utilities/Messages.h"
+#include "utilities/MessageDispatcher.h"
+#include "utilities/telegram.h"
 
 namespace SpellByte {
-    int Actor::nextValidINTERNAL_ID = 0;
+    int BaseActor::nextValidINTERNAL_ID = 0;
 
-    Actor::Actor() {
-        SceneNode = nullptr;
+    Actor::Actor():BaseActor() {
         AnimationState = nullptr;
         MotionAnimation = nullptr;
         ActorEntity = nullptr;
         ActorFSM = nullptr;
         Steering = nullptr;
-        WorldPtr = nullptr;
-        setID(nextValidINTERNAL_ID);
+        ActorAny = nullptr;
         Direction = Ogre::Vector3::ZERO;
         Position = Ogre::Vector3::ZERO;
         positionChanged = false;
         Active = true;
         InMotion = false;
         NeedTravel = false;
+        dead = false;
         Mass = 1.0f;
         MaxSpeed = APP->getConfigFloat("npc_velocity");
         MaxForce = 0.01;
@@ -31,11 +34,14 @@ namespace SpellByte {
         Velocity = Ogre::Vector3::ZERO;
         realVelocity = APP->getConfigFloat("npc_velocity");
 
-        Ogre::String nodeName = "NODE_MALE" + Ogre::StringConverter::toString(INTERNAL_ID);
+        Ogre::String nodeName = "NODE_MALE" + Ogre::StringConverter::toString(getInternalID());
         if (!APP->SceneMgr->hasSceneNode(nodeName)) {
-            SceneNode = APP->SceneMgr->getRootSceneNode()->createChildSceneNode(nodeName);
-            SceneNode->setScale(.014, .014, .014);
-            //SceneNode->setDirection(Ogre::Vector3::UNIT_X);
+            ActorNode = APP->SceneMgr->getRootSceneNode()->createChildSceneNode(nodeName);
+            Ogre::Real scaleFactor = (rand() % 60) / 10000 + 0.01;
+            ActorNode->setScale(scaleFactor, scaleFactor, scaleFactor);
+            //ActorNode->setDirection(Ogre::Vector3::UNIT_X);
+            ActorAny = new UserAny(UserAny::ACTOR, ID);
+            ActorNode->setUserAny(Ogre::Any(ActorAny));
         }
 
         WalkList = std::deque<Ogre::Vector3>();
@@ -58,13 +64,30 @@ namespace SpellByte {
             delete Steering;
             Steering = nullptr;
         }
+
+        if (ActorAny) {
+            delete ActorAny;
+            ActorAny = nullptr;
+        }
     }
 
     void Actor::update(const Ogre::FrameEvent &evt) {
         if (!Active)
             return;
+
+        if (AnimationState) {
+                if (dead && AnimationState->getAnimationName() == APP->getConfigString("npc_death") &&
+                    !AnimationState->hasEnded())
+                    AnimationState->addTime(evt.timeSinceLastFrame);
+                else
+                    AnimationState->addTime(evt.timeSinceLastFrame);
+        }
+
+        if (dead)
+            return;
+
         if (positionChanged) {
-            SceneNode->setPosition(Position);
+            ActorNode->setPosition(Position);
             positionChanged = false;
         }
         ActorFSM->update(evt);
@@ -82,7 +105,8 @@ namespace SpellByte {
             Ogre::Real move = realVelocity * evt.timeSinceLastFrame;
             Distance -= move;
             if (Distance <= 0.0f) {
-                SceneNode->setPosition(Destination);
+                ActorNode->setPosition(Destination);
+                Position = ActorNode->getPosition();
                 Direction = Ogre::Vector3::ZERO;
                 if (InMotion && !nextLocation()) {
                     if (MotionAnimation)
@@ -92,16 +116,11 @@ namespace SpellByte {
                     rotateActor(evt);
                 }
             } else {
-                SceneNode->translate(Direction * move);
+                ActorNode->translate(Direction * move);
+                Position = ActorNode->getPosition();
             }
         }
 
-        if (AnimationState && AnimationState->getEnabled()) {
-                if(AnimationState->hasEnded() && !AnimationState->getLoop()) {
-                    AnimationState->setEnabled(false);
-                }
-                AnimationState->addTime(evt.timeSinceLastFrame);
-        }
         if (MotionAnimation && MotionAnimation->getEnabled()) {
             if (MotionAnimation->hasEnded() && !MotionAnimation->getLoop()) {
                 MotionAnimation->setEnabled(false);
@@ -113,58 +132,137 @@ namespace SpellByte {
         }
     }
 
+    void Actor::die() {
+        if (dead)
+            return;
+        MotionAnimation->setEnabled(false);
+        MotionAnimation->setTimePosition(0);
+        InMotion = false;
+        WalkList.clear();
+        setAnimation(APP->getConfigString("npc_death"), false, true);
+        AUDIOMAN->playWAV("arghhh.wav");
+        dead = true;
+    }
+
     void Actor::rotateActor(const Ogre::FrameEvent &evt) {
-        Ogre::Vector3 src = SceneNode->getOrientation() * Ogre::Vector3::UNIT_Z;
+        Ogre::Vector3 src = ActorNode->getOrientation() * Ogre::Vector3::UNIT_Z;
         src.y = 0;
         Direction.y = 0;
         src.normalise();
         Ogre::Quaternion quat = src.getRotationTo(Direction);
-        SceneNode->rotate(quat);
+        ActorNode->rotate(quat);
     }
 
     void Actor::queueDestination(Ogre::Vector3 dest) {
-        if (!Active || !WorldPtr)
+        if (!Active || dead || !WorldPtr)
             return;
         WorldPtr->setVector3Height(dest);
         WalkList.push_back(dest);
     }
 
     bool Actor::nextLocation() {
-        if(WalkList.empty()) {
+        if(dead || WalkList.empty()) {
             return false;
             NeedTravel = false;
         }
         Destination = WalkList.front();
         WalkList.pop_front();
-        Direction = Destination - SceneNode->getPosition();
+        Direction = Destination - ActorNode->getPosition();
         Distance = Direction.normalise();
         NeedTravel = true;
 
         return true;
     }
 
-    void Actor::setID(int val) {
-        // Ensure ID is valid
-        assert((val >= nextValidINTERNAL_ID) && "<Actor::setID>: invalid ID");
-
-        INTERNAL_ID = val;
-        nextValidINTERNAL_ID = INTERNAL_ID + 1;
-    }
-
     void Actor::activate() {
         Active = true;
         WorldPtr = APP->getWorldPtr();
+        ActorAny->ID = ID;
+        dead = false;
+    }
+
+    int Actor::getID() {
+        return ID;
+    }
+
+    void Actor::enableTarget() {
+        //ActorNode->showBoundingBox(true);
+
+        /*
+            rim lighting
+            see: http://www.ogre3d.org/tikiwiki/Create+outline+around+a+character
+
+        */
+
+        unsigned short count = ActorEntity->getNumSubEntities();
+
+        const Ogre::String file_name = "rim.dds";
+        const Ogre::String rim_material_name = "_rim";
+
+        for (unsigned short i = 0; i < count; ++i) {
+            Ogre::SubEntity *subentity = ActorEntity->getSubEntity(i);
+
+            const Ogre::String &old_material_name = subentity->getMaterialName();
+            Ogre::String new_material_name = old_material_name + rim_material_name;
+
+            Ogre::MaterialPtr new_material = Ogre::MaterialManager::getSingleton().getByName(new_material_name);
+
+            if (new_material.isNull()) {
+                MaterialPtr old_material = Ogre::MaterialManager::getSingleton().getByName(old_material_name);
+                new_material = old_material->clone(new_material_name);
+
+                Ogre::Pass *pass = new_material->getTechnique(0)->getPass(0);
+                Ogre::TextureUnitState *texture = pass->createTextureUnitState();
+                texture->setCubicTextureName(&file_name, true);
+                texture->setTextureAddressingMode(Ogre::TextureUnitState::TAM_CLAMP);
+                texture->setColourOperationEx(Ogre::LBX_ADD, Ogre::LBS_TEXTURE, Ogre::LBS_CURRENT);
+                texture->setColourOpMultipassFallback(Ogre::SBF_ONE, Ogre::SBF_ONE);
+                texture->setEnvironmentMap(true, Ogre::TextureUnitState::ENV_NORMAL);
+            }
+
+            subentity->setMaterial(new_material);
+        }
+    }
+
+    void Actor::disableTarget() {
+        //ActorNode->showBoundingBox(false);
+
+        /*
+            rim lighting
+            see: http://www.ogre3d.org/tikiwiki/Create+outline+around+a+character
+
+        */
+
+        unsigned short count = ActorEntity->getNumSubEntities();
+
+        for (unsigned short i = 0; i < count; ++i) {
+            Ogre::SubEntity *subentity = ActorEntity->getSubEntity(i);
+            Ogre::SubMesh *submesh = subentity->getSubMesh();
+
+            const Ogre::String &old_material_name = submesh->getMaterialName();
+            const Ogre::String &new_material_name = subentity->getMaterialName();
+
+            // If the entity is already using original material then done
+            if (0 == strcmp(old_material_name.c_str(), new_material_name.c_str()))
+                continue;
+
+            subentity->setMaterialName(old_material_name);
+        }
     }
 
     void Actor::clear() {
-        SceneNode->detachAllObjects();
+        ActorNode->detachAllObjects();
     }
 
     void Actor::setAnimation(Ogre::String animName, bool loop, bool enabled) {
+        if (dead)
+            return;
         if (ActorEntity->hasAnimationState(animName)) {
             LOG("Starting animation '" + animName + "' for " + ActorEntity->getName());
             if (AnimationState) {
-                AnimationState->setWeight(0);
+                //AnimationState->setWeight(0);
+                AnimationState->setTimePosition(0);
+                AnimationState->setEnabled(false);
             }
             AnimationState = ActorEntity->getAnimationState(animName);
             AnimationState->setLoop(loop);
@@ -175,9 +273,10 @@ namespace SpellByte {
     }
 
     void Actor::reset() {
-        Ogre::String entityName = "ENTITY_MALE" + Ogre::StringConverter::toString(INTERNAL_ID);
+        Ogre::String entityName = "ENTITY_MALE" + Ogre::StringConverter::toString(getInternalID());
         if (!APP->SceneMgr->hasEntity(entityName)) {
             ActorEntity = APP->SceneMgr->createEntity(entityName, "MedBaseMaleApril2013.mesh");
+            ActorEntity->setQueryFlags(World::COLLISION_MASK::ACTOR);
             /*LOG("Subentities: " + Ogre::StringConverter::toString(ActorEntity->getNumSubEntities()));
             Ogre::Mesh::SubMeshNameMap::iterator it;
             Ogre::Mesh::SubMeshNameMap nameMap = ActorEntity->getMesh()->getSubMeshNameMap();
@@ -185,8 +284,10 @@ namespace SpellByte {
                 LOG(it->first);
             }*/
             MotionAnimation = ActorEntity->getAnimationState("GENWalk");
-            SceneNode->attachObject(ActorEntity);
+            ActorNode->attachObject(ActorEntity);
         }
+        WalkList.clear();
+        InMotion = NeedTravel = false;
         deactivate();
     }
 
@@ -199,30 +300,18 @@ namespace SpellByte {
         }
     }
 
-    void Actor::setPosition(const Ogre::Vector3 newPos) {
-        Position = newPos;
-        positionChanged = true;
-    }
-
-    void Actor::setPositionXYZ(const Ogre::Real x, const Ogre::Real y, const Ogre::Real z) {
-        Position = Ogre::Vector3(x, y, z);
-        positionChanged = true;
-    }
-
-    const Ogre::Vector3 Actor::getPosition() const {
-        return Position;
-    }
-
-    void Actor::resetNextValidID() {
-        nextValidINTERNAL_ID = 0;
-    }
-
-    int Actor::getNextValidID() {
-        return nextValidINTERNAL_ID;
-    }
-
-    void Actor::handleMessage(const Telegram &msg) {
-        // Handle message code for actor here
+    bool Actor::handleMessage(const Telegram &msg) {
+        LOG("Actor(" + Ogre::StringConverter::toString(ID) + ") Received Message: " + msgToString(msg.Msg));
+        if (msg.Msg == MessageType::PLAYER_FED) {
+            Ogre::Vector3 attackerPos = DereferenceToType<Ogre::Vector3>(msg.ExtraInfo);
+            if (attackerPos.distance(ActorNode->getPosition())) {
+                LOG("Player fed succesfully!");
+                die();
+                Courier->DispatchMsg(SEND_MSG_IMMEDIATELY, ID, msg.Sender, MessageType::FEED_SUCCESSFUL);
+            }
+            return true;
+        }
+        return false;
     }
 
     void Actor::bindToLUA() {

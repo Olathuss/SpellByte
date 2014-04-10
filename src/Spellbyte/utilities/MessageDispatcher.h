@@ -22,8 +22,8 @@
 
 #include "telegram.h"
 
-// Simply, use Courier to access MessageDispatcher singleton
-#define Courier MessageDispatcher::getSingletonPtr()
+// Use Courier to access MessageDispatcher singleton
+#define Courier MessageDispatcher::getInstance()
 
 namespace SpellByte
 {
@@ -32,9 +32,14 @@ namespace SpellByte
     const int NO_ADDITIONAL_INFO = 0;
     const int SENDER_ID_IRRELEVANT = -1;
 
-    class MessageDispatcher : public Ogre::Singleton<MessageDispatcher>
+    class Player;
+
+    class MessageDispatcher
     {
     private:
+        bool boundToLUA;
+
+        static MessageDispatcher *Instance;
         // Use standard set container to auto sort and remove duplicates
         std::set<Telegram> PriorityQ;
 
@@ -42,18 +47,31 @@ namespace SpellByte
         // Calls message handling member function of receiver
         // for the Telegram
         // Need to replace with ManagerBase
-        void Discharge(ActorPtr receiver, const Telegram &msg);
+        void Discharge(BaseActor *receiver, const Telegram &msg);
 
-        MessageDispatcher(){}
+        MessageDispatcher();
+
+        // Bind MessageDispatcher to LUA
+        void bindToLUA();
 
         // Keep copy ctor and assignment as private
         MessageDispatcher(const MessageDispatcher&);
         MessageDispatcher &operator=(const MessageDispatcher&);
 
+        BaseActor *player;
+        int playerID;
+
     public:
+        ~MessageDispatcher() {
+            player = nullptr;
+        }
+
+        void setPlayer(int ID, BaseActor *player);
+
+        static MessageDispatcher *getInstance();
         // send message to another Actor.  Receiving Actor is referenced
         // by ID.
-        void DispatchMsg(double delay, int sender, int receiver, int msg, void* additionalInfo);
+        void DispatchMsg(double delay, int sender, int receiver, int msg, void *additionalInfo = nullptr);
 
         // send out any delayed messages.  Called once each time through main loop
         void DispatchDelayedMessages();

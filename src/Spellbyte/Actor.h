@@ -5,19 +5,17 @@
 #include <deque>
 #include "stdafx.h"
 #include "Object.h"
+#include "actor/BaseActor.h"
 #include "actor/StateMachine.h"
 #include "actor/SteeringBehaviors.h"
 
 namespace SpellByte {
-    // Define unique ID for component type
-    typedef int ActorID;
-
     // Telegram for Actor communication
     struct Telegram;
     class ActorPtr;
     class World;
 
-    class Actor {
+    class Actor : public BaseActor {
 
     // Allow ActorFactory to access any data of Actor
     friend class ActorFactory;
@@ -29,20 +27,12 @@ namespace SpellByte {
         static void bindToLUA();
 
     private:
-        // Each Actor uses INTERNAL_ID for its Scene/Entity
-        ActorID INTERNAL_ID;
         // Each Actor uses an ID as an external ID for GameLogic reference
         ActorID ID;
 
         // Mark Actor has active or inactive
         bool active;
-
-        // next valid ID, each type an Actor is created
-        // this is updated
-        static int nextValidINTERNAL_ID;
-
-        // Sets ID of the Actor
-        void setID(int value);
+        bool dead;
 
         bool Active;
 
@@ -51,8 +41,6 @@ namespace SpellByte {
     protected:
         StateMachine<Actor> *ActorFSM;
 
-        Ogre::SceneNode *SceneNode;
-        Ogre::Entity *ActorEntity;
         Ogre::AnimationState *AnimationState;
         // Animation used while in motion (ralk/run)
         Ogre::AnimationState *MotionAnimation;
@@ -78,18 +66,16 @@ namespace SpellByte {
 
         std::deque<Ogre::Vector3> WalkList;
 
-        World* WorldPtr;
-
     public:
         Actor();
 
         ~Actor();
 
         // Update components
-        void update(const Ogre::FrameEvent &evt);
+        virtual void update(const Ogre::FrameEvent &evt);
 
         // entities handle messages, pass telegram to each component
-        void handleMessage(const Telegram &msg);
+        virtual bool handleMessage(const Telegram &msg);
 
         void setAnimation(Ogre::String animName, bool loop, bool enabled);
 
@@ -100,13 +86,13 @@ namespace SpellByte {
         void deactivate();
         void activate();
 
+        // For targeting
+        void enableTarget();
+        void disableTarget();
+        void die();
+
         void queueDestination(Ogre::Vector3 dest);
         bool nextLocation();
-
-        // Some basic stuff
-        void setPosition(const Ogre::Vector3 newPos);
-        void setPositionXYZ(const Ogre::Real x, const Ogre::Real y, const Ogre::Real z);
-        const Ogre::Vector3 getPosition() const;
 
         Ogre::Vector3 velocity()const {
             return Velocity;
@@ -177,16 +163,7 @@ namespace SpellByte {
             MaxTurnRate = val;
         }
 
-        // grab next valid id
-        static int getNextValidID();
-
-        // reset entities next id
-        static void resetNextValidID();
-
-        int getID()
-        {
-            return ID;
-        }
+        int getID();
     };
 
     // Use smart pointer for entities

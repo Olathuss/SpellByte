@@ -114,8 +114,10 @@
 		<Unit filename="Spellbyte/StateManager.cpp" />
 		<Unit filename="Spellbyte/StateManager.h" />
 		<Unit filename="Spellbyte/Subscriber.h" />
+		<Unit filename="Spellbyte/UserAny.h" />
 		<Unit filename="Spellbyte/World.cpp" />
 		<Unit filename="Spellbyte/World.h" />
+		<Unit filename="Spellbyte/actor/BaseActor.h" />
 		<Unit filename="Spellbyte/actor/State.h" />
 		<Unit filename="Spellbyte/actor/StateMachine.h" />
 		<Unit filename="Spellbyte/actor/SteeringBehaviors.cpp" />
@@ -189,6 +191,7 @@
 		<Unit filename="Spellbyte/stdafx.h" />
 		<Unit filename="Spellbyte/utilities/MessageDispatcher.cpp" />
 		<Unit filename="Spellbyte/utilities/MessageDispatcher.h" />
+		<Unit filename="Spellbyte/utilities/Messages.h" />
 		<Unit filename="Spellbyte/utilities/easyzlib.c">
 			<Option compilerVar="CC" />
 		</Unit>

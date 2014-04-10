@@ -145,6 +145,8 @@ namespace SpellByte {
     }
 
     Object::Object() {
+        coldetModel = nullptr;
+        ObjectAny = nullptr;
         entityCount = 0;
         setID(nextValidID);
         ysnap = Y_TERRAIN;
@@ -155,7 +157,14 @@ namespace SpellByte {
         // but not the node itself, it's parent or owner will destroy
         // that.
         ObjectNode->removeAndDestroyAllChildren();
-        delete coldetModel;
+        if (coldetModel) {
+            delete coldetModel;
+            coldetModel = nullptr;
+        }
+        if (ObjectAny) {
+            delete ObjectAny;
+            ObjectAny = nullptr;
+        }
     }
 
     bool Object::init() {
@@ -206,8 +215,15 @@ namespace SpellByte {
             LOG("Loading mesh: " + meshFile);
             // Create entity with mesh
             Ogre::Entity* entity = addEntity(meshFile, meshGroup);
-            addTrianglesToColdet(entity, coldetModel);
-            coldetModel->finalize();
+
+            /*
+                TBR: If I get OPCODE or another collision system working
+                Coldet model for collision, not used because
+                couldn't get coldet to work correctly, left
+                here in case I want to revisit it
+            */
+            //addTrianglesToColdet(entity, coldetModel);
+            //coldetModel->finalize();
             if (entity != NULL) {
                 // Check to see if entity requires material
                 // If so, this needs to be kept in memory for saving later
@@ -308,16 +324,6 @@ namespace SpellByte {
             ObjectNode->setOrientation(rotQ);
         }
 
-        //worldPtr->worldObjectSystem->add_object
-        /*LOG("MATRIX: ");
-        Ogre::Matrix4 matrix4 = ObjectNode->_getFullTransform();
-        for(int i = 0; i < 4; i++) {
-             LOG("[" + Ogre::StringConverter::toString(matrix4[i][0]) + "]" +
-             "[" + Ogre::StringConverter::toString(matrix4[i][1]) + "]" +
-             "[" + Ogre::StringConverter::toString(matrix4[i][2]) + "]" +
-             "[" + Ogre::StringConverter::toString(matrix4[i][3]) + "]");
-        }*/
-
         // Load position and set dependent on Y_SNAP
         float x, y, z;
         x = y = z = 0.0;
@@ -335,43 +341,21 @@ namespace SpellByte {
             ObjectNode->setScale(x, y, z);
         }
 
-        ObjectNode->needUpdate();
+        /*
+            For coldet collision, currently does not work
+            But left in case I want to come back and try again.
+        */
+        /*ObjectNode->needUpdate();
 
         Ogre::Matrix4 matrix4 = ObjectNode->_getFullTransform().transpose();
-        /*LOG("MATRIX.transpose(): ");
-        for(int i = 0; i < 4; i++) {
-             LOG("[" + Ogre::StringConverter::toString(matrix4[i][0]) + "]" +
-             "[" + Ogre::StringConverter::toString(matrix4[i][1]) + "]" +
-             "[" + Ogre::StringConverter::toString(matrix4[i][2]) + "]" +
-             "[" + Ogre::StringConverter::toString(matrix4[i][3]) + "]");
-        }*/
-        //matrix[4][4];
         float matrix[16];
-        //Ogre::Matrix4 matrix4 = ObjectNode->_getFullTransform().transpose();
         for(int i = 0; i < 4; i++) {
             for(int j = 0; j < 4; j++) {
                 matrix[j + (i * 4)] = matrix4[i][j];
             }
         }
-        /*for(int i = 0; i < 16; i++) {
-            LOG(Ogre::StringConverter::toString(matrix[i]));
-        }*/
-        coldetModel->setTransform(matrix);
 
-        //Ogre::Vector3 obj_pos = ObjectNode->getPosition();
-        //float pos[3] = { obj_pos.x, obj_pos.y, obj_pos.z };
-        //coldetID = WorldPtr->worldObjectSystem->add_object(coldetModel, pos);
-
-        /*matrix4 = ObjectNode->_getFullTransform();
-        LOG("!!!MATRIX: ");
-        for(int i = 0; i < 4; i++) {
-             LOG("[" + Ogre::StringConverter::toString(matrix4[i][0]) + "]" +
-             "[" + Ogre::StringConverter::toString(matrix4[i][1]) + "]" +
-             "[" + Ogre::StringConverter::toString(matrix4[i][2]) + "]" +
-             "[" + Ogre::StringConverter::toString(matrix4[i][3]) + "]");
-        }*/
-
-        //worldPtr->worldObjectSystem->add_object(coldetModel)
+        coldetModel->setTransform(matrix);*/
 
         return true;
     }
@@ -394,7 +378,11 @@ namespace SpellByte {
 
     void Object::update(const Ogre::FrameEvent &evt)
     {
-        // empty for now
+        /*
+            Static objects aren't likely to need this update method,
+            although could be useful for animations, i.e. doors opening
+            As of now this never gets called
+        */
     }
 
     // Saves object to XML
@@ -424,7 +412,7 @@ namespace SpellByte {
             }
         }
 
-        // Save out settings
+        // Save out settings, though visibility is ignored
         tinyxml2::XMLElement *settingElt = xmlDoc->NewElement("setting");
         settingElt->SetAttribute("ysnap", "absolute");
         objElt->InsertEndChild(settingElt);
@@ -476,7 +464,10 @@ namespace SpellByte {
         }
         // Allow Ogre's SceneNode to refer to this as its owner
         // Useful for colliision callback, event referal etc.
-        ObjectNode->setUserAny(Ogre::Any(this));
+        LOG("Setting UserAny");
+        ObjectAny = new UserAny(UserAny::OBJECT, ID);
+        ObjectNode->setUserAny(Ogre::Any(ObjectAny));
+        LOG("Setting UserAny");
     }
 
     void Object::handleMessage(const Telegram &msg) {

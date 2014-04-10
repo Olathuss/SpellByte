@@ -1,10 +1,10 @@
 #ifndef _SOUND_MANAGER_H_
 #define _SOUND_MANAGER_H_
 
+#include "../define.h"
 #ifdef AUDIO
 #include <vector>
 #include <string>
-#include "../define.h"
 #include <AL/al.h>
 #include <AL/alc.h>
 #include "../Subscriber.h"

@@ -203,6 +203,7 @@ namespace SpellByte {
         CEGUI::SchemeManager::getSingleton().createFromFile( "GameMenu.scheme" );
         CEGUI::SchemeManager::getSingleton().createFromFile( "TaharezLook.scheme" );
         CEGUI::SchemeManager::getSingleton().createFromFile( "VanillaSkin.scheme" );
+        CEGUI::SchemeManager::getSingleton().createFromFile( "SpellByte.scheme" );
         ceguiContext = &CEGUI::System::getSingleton().getDefaultGUIContext();
         ceguiContext->getMouseCursor().setDefaultImage( "GameMenuImages/MouseCursor" );
         ceguiContext->injectMousePosition(0.0, 0.0);
@@ -441,7 +442,6 @@ namespace SpellByte {
         else
             Mouse->setEventCallback(pMouseListener);
 
-
         // Load resources from resources.cfg
         Ogre::String secName, typeName, archName;
         Ogre::ConfigFile cf;
@@ -454,8 +454,7 @@ namespace SpellByte {
             secName = seci.peekNextKey();
             Ogre::ConfigFile::SettingsMultiMap *settings = seci.getNext();
             Ogre::ConfigFile::SettingsMultiMap::iterator it;
-            for (it = settings->begin(); it != settings->end(); ++it)
-            {
+            for (it = settings->begin(); it != settings->end(); ++it) {
                 typeName = it->first;
                 archName = it->second;
                 Ogre::ResourceGroupManager::getSingleton().addResourceLocation(archName, typeName, secName);
@@ -524,8 +523,9 @@ namespace SpellByte {
             tmp = new UserEvent(UserEvent::PLAYER_DOWN_ON);
         } else if (keyEventRef.key == OIS::KC_LSHIFT) {
             tmp = new UserEvent(UserEvent::PLAYER_RUN_ON);
+        } else if (keyEventRef.key == OIS::KC_SPACE) {
+            tmp = new UserEvent(UserEvent::PLAYER_JUMP);
         }
-
         // It it was a valid action, then add the event
         if (tmp != NULL) {
             CONTROL->addEvent(tmp);
@@ -620,6 +620,7 @@ namespace SpellByte {
         switch (id) {
         case OIS::MB_Left: {
                 tmp = new UserEvent(UserEvent::MOUSE_LEFT_PRESS);
+                CONTROL->addEvent(new UserEvent(UserEvent::PLAYER_FEED));
                 break;
             }
         case OIS::MB_Right: {

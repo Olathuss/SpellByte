@@ -11,6 +11,7 @@
 #ifndef _WAVFILEMANAGER_H_
 #define _WAVFILEMANAGER_H_
 
+#define AUDIO
 #ifdef AUDIO
 #include <OgreResourceManager.h>
 #include "WAVResourceFile.h"

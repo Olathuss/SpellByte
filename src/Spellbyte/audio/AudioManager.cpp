@@ -1,8 +1,8 @@
-#ifdef AUDIO
+
 
 #include <cstdio>
 #include "AudioManager.h"
-
+#ifdef AUDIO
 #include "../console/LuaManager.h"
 #include "SLB.hpp"
 #include "../console/console.h"

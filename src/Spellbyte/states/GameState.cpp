@@ -1,23 +1,20 @@
 #include "GameState.h"
-#include "../SpellByte.h"
+#include "../define.h"
+#include "../utilities/MessageDispatcher.h"
 
-namespace SpellByte
-{
-    GameState::GameState()
-    {
+namespace SpellByte {
+    GameState::GameState() {
         debugBox = NULL;
         rootWindow = NULL;
         mCollisionTools = 0;
         Quit = false;
     }
 
-    GameState::~GameState()
-    {
+    GameState::~GameState() {
         SceneMgr = 0;
     }
 
-    void GameState::enter()
-    {
+    void GameState::enter() {
         LOG("GameState: enter");
 
         SceneMgr = APP->SceneMgr;
@@ -48,15 +45,13 @@ namespace SpellByte
         LOG("Collision tools initialization complete");
     }
 
-    bool GameState::pause()
-    {
+    bool GameState::pause() {
         APP->Log->logMessage("GameState: pause");
 
         return true;
     }
 
-    void GameState::resume()
-    {
+    void GameState::resume() {
         APP->Log->logMessage("GameState: resume");
 
         buildGUI();
@@ -68,8 +63,7 @@ namespace SpellByte
         Quit = false;
     }
 
-    void GameState::exit()
-    {
+    void GameState::exit() {
         APP->Log->logMessage("GameState: exit");
 
         destroyScene();
@@ -111,6 +105,9 @@ namespace SpellByte
     }
 
     bool GameState::update(const Ogre::FrameEvent &evt) {
+        // Send out delayed messages
+        Courier->DispatchDelayedMessages();
+
         player.update(evt);
         gameWorld.update(evt);
 

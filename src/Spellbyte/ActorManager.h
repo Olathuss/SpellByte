@@ -11,6 +11,7 @@
 
 namespace SpellByte {
     class Actor;
+    class Player;
     // Ogre Singleton Type
     class ActorManager {
     typedef std::vector<Ogre::String> ActorSet;

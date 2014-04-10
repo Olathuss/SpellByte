@@ -65,6 +65,8 @@ namespace SpellByte {
             PLAYER_BACKWARD_OFF,
             PLAYER_RUN_ON,
             PLAYER_RUN_OFF,
+            PLAYER_JUMP,
+            PLAYER_FEED,
             PLAYER_ACTION_END,
             END
         };

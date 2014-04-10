@@ -3,6 +3,8 @@
 
 #include <map>
 
+#define AUDIO
+
 #ifdef AUDIO
 #include <AL/al.h>
 #endif

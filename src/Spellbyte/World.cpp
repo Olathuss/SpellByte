@@ -169,8 +169,6 @@ namespace SpellByte
         terrainGlobals = NULL;
         terrainGroup = NULL;
         GameCollisionTools = NULL;
-        worldObjectSystem = NULL;
-        worldObjectSystem = COLDET::newSweepPruneSystem(2048);
     }
 
     World::~World()
@@ -180,10 +178,6 @@ namespace SpellByte
         if (waterMesh) {
             delete waterMesh;
             waterMesh = NULL;
-        }
-        if(worldObjectSystem) {
-            delete worldObjectSystem;
-            worldObjectSystem = NULL;
         }
     }
 
@@ -349,11 +343,7 @@ namespace SpellByte
         SceneMgr->destroyAllEntities();
         SceneMgr->destroyAllLights();
         ActorMgr->reset();
-        /*for(unsigned int i = 0; i < ObjectData.size(); i++)
-        {
-            delete ObjectData[i];
-        }
-        ObjectData.clear();*/
+
         destroyScene();
         heightMaps.clear();
     }

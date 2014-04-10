@@ -7,10 +7,11 @@
 
 namespace SpellByte {
     ActorFactory::ActorFactory(void) {
-        lastActorID = Actor::getNextValidID();
+        // Nothing here!
     }
 
     ActorFactory::~ActorFactory() {
+        // Nothing here!
     }
 
     Actor *ActorFactory::createActor(Ogre::SceneManager *SceneMgr,

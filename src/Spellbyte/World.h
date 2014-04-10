@@ -27,8 +27,9 @@ namespace SpellByte
     {
     public:
         enum COLLISION_MASK {
-            NONE = 1<<0,
-            STATIC = 1<<1,
+            NONE = 1 << 0,
+            STATIC = 1 << 1,
+            ACTOR = 1 << 2
         };
 
         World();
@@ -79,9 +80,6 @@ namespace SpellByte
         const float getDataFloat(std::string ID) const;
         bool hasDataInt(std::string ID) const;
         const int getDataInt(std::string ID) const;
-
-        // ColDet collision
-        COLDET::MultiObjectSystem* worldObjectSystem;
 
     private:
         struct Layer {

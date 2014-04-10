@@ -6,6 +6,7 @@
 #include "utilities/tinyxml2.h"
 #include "stdafx.h"
 #include "coldet/coldet.h"
+#include "UserAny.h"
 
 namespace SpellByte {
 
@@ -25,7 +26,7 @@ namespace SpellByte {
     class ObjectPtr;
 
     class ObjectGroup;
-    class Object : public Ogre::Any {
+    class Object {
     friend class ObjectFactory;
 
     public:
@@ -85,6 +86,7 @@ namespace SpellByte {
     public:
         CollisionModel3D *coldetModel;
         int coldetID;
+        UserAny *ObjectAny;
 
     public:
         Object();
