@@ -18,5 +18,19 @@
 # Log files
 *.log
 
+# Screenshots
+*.jpg
+
+# Dll
+*.dll
+
 # Assets
 assets/
+lib/
+include/
+game/
+docs/
+boost/
+plugins/
+temp/
+src/doxygen
