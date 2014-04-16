@@ -139,7 +139,7 @@
             if(CurrentSplash >= SplashScreenList.size())
             {
                 changeState(findByName("MenuState"));
-                return;
+                return true;
             }
             else
                 SplashScreen->setMaterial(SplashScreenList[CurrentSplash]);

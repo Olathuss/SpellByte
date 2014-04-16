@@ -8,11 +8,12 @@
 */
 
 namespace SpellByte {
-    class UserAny : public Ogre::Entity {
+    class UserAny {
     public:
         enum {
             OBJECT = 0,
-            ACTOR
+            ACTOR,
+            COFFIN
         };
         UserAny(){};
         UserAny(int type, int id){ Type = type; ID = id; }

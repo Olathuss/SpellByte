@@ -1,17 +1,21 @@
 #include <cassert>
 
-#include "SLB/SLB.hpp"
+#include <SLB/SLB.hpp>
 #include "Actor.h"
-#include "define.h"
-#include "World.h"
-#include "actor/WanderState.h"
-#include "audio/AudioManager.h"
-#include "utilities/Messages.h"
-#include "utilities/MessageDispatcher.h"
-#include "utilities/telegram.h"
+#include <define.h>
+#include <World.h>
+#include <actor/WanderState.h>
+#include <audio/AudioManager.h>
+#include <utilities/Messages.h>
+#include <utilities/MessageDispatcher.h>
+#include <utilities/telegram.h>
+#include <graph/AStarSearch.h>
 
 namespace SpellByte {
     int BaseActor::nextValidINTERNAL_ID = 0;
+
+    bool Actor::initAnimationList = false;
+    std::vector<Ogre::String> Actor::idleAnimations = std::vector<Ogre::String>(24);
 
     Actor::Actor():BaseActor() {
         AnimationState = nullptr;
@@ -52,6 +56,15 @@ namespace SpellByte {
         ActorFSM->setGlobalState(nullptr);
 
         Steering = new SteeringBehaviors(this);
+
+        if (!initAnimationList) {
+            idleAnimations.push_back("NPCThinking");
+            idleAnimations.push_back("NPCLookingAround");
+            idleAnimations.push_back("NPCBoring");
+            idleAnimations.push_back("NPCYawn");
+            idleAnimations.push_back("NPCPointingA");
+            initAnimationList = true;
+        }
     }
 
     Actor::~Actor() {
@@ -79,6 +92,8 @@ namespace SpellByte {
                 if (dead && AnimationState->getAnimationName() == APP->getConfigString("npc_death") &&
                     !AnimationState->hasEnded())
                     AnimationState->addTime(evt.timeSinceLastFrame);
+                else if(!InMotion && (!AnimationState->getEnabled() || AnimationState->hasEnded()))
+                    animateIdle();
                 else
                     AnimationState->addTime(evt.timeSinceLastFrame);
         }
@@ -93,14 +108,14 @@ namespace SpellByte {
         ActorFSM->update(evt);
 
         if (!InMotion) {
-            if (nextLocation())
+            if (nextLocation()) {
                 if (MotionAnimation) {
-                    MotionAnimation->setWeight(1);
                     MotionAnimation->setLoop(true);
                     MotionAnimation->setEnabled(true);
                     InMotion = true;
                     rotateActor(evt);
                 }
+            }
         } else {
             Ogre::Real move = realVelocity * evt.timeSinceLastFrame;
             Distance -= move;
@@ -124,12 +139,18 @@ namespace SpellByte {
         if (MotionAnimation && MotionAnimation->getEnabled()) {
             if (MotionAnimation->hasEnded() && !MotionAnimation->getLoop()) {
                 MotionAnimation->setEnabled(false);
-                MotionAnimation->setWeight(0);
+                //MotionAnimation->setWeight(0);
                 MotionAnimation->setTimePosition(0);
+                InMotion = false;
             } else {
                 MotionAnimation->addTime(evt.timeSinceLastFrame);
             }
         }
+    }
+
+    void Actor::animateIdle() {
+        int randomIdleAnimation = rand() % idleAnimations.size();
+        setAnimation(idleAnimations[randomIdleAnimation], false, true);
     }
 
     void Actor::die() {
@@ -140,7 +161,9 @@ namespace SpellByte {
         InMotion = false;
         WalkList.clear();
         setAnimation(APP->getConfigString("npc_death"), false, true);
+#ifdef AUDIO
         AUDIOMAN->playWAV("arghhh.wav");
+#endif
         dead = true;
     }
 
@@ -162,8 +185,10 @@ namespace SpellByte {
 
     bool Actor::nextLocation() {
         if(dead || WalkList.empty()) {
-            return false;
             NeedTravel = false;
+            if (!InMotion && rand() % 100 == 1)
+                Courier->DispatchMsg(rand() % 5000, SENDER_ID_IRRELEVANT, ID, MessageType::RANDOM_TRAVEL);
+            return false;
         }
         Destination = WalkList.front();
         WalkList.pop_front();
@@ -177,6 +202,8 @@ namespace SpellByte {
     void Actor::activate() {
         Active = true;
         WorldPtr = APP->getWorldPtr();
+        currentNode = rand() % WorldPtr->getGraph()->nodeCount();
+        setPosition(WorldPtr->getGraph()->getNode(currentNode).getPos());
         ActorAny->ID = ID;
         dead = false;
     }
@@ -258,7 +285,6 @@ namespace SpellByte {
         if (dead)
             return;
         if (ActorEntity->hasAnimationState(animName)) {
-            LOG("Starting animation '" + animName + "' for " + ActorEntity->getName());
             if (AnimationState) {
                 //AnimationState->setWeight(0);
                 AnimationState->setTimePosition(0);
@@ -284,8 +310,14 @@ namespace SpellByte {
                 LOG(it->first);
             }*/
             MotionAnimation = ActorEntity->getAnimationState("GENWalk");
+            MotionAnimation->setEnabled(false);
+            MotionAnimation->setTimePosition(0);
+            AnimationState = ActorEntity->getAnimationState("NPCThinking");
+            AnimationState->setTimePosition(0);
+            AnimationState->setEnabled(false);
             ActorNode->attachObject(ActorEntity);
         }
+        AnimationState = nullptr;
         WalkList.clear();
         InMotion = NeedTravel = false;
         deactivate();
@@ -302,16 +334,53 @@ namespace SpellByte {
 
     bool Actor::handleMessage(const Telegram &msg) {
         LOG("Actor(" + Ogre::StringConverter::toString(ID) + ") Received Message: " + msgToString(msg.Msg));
-        if (msg.Msg == MessageType::PLAYER_FED) {
+        if (dead || !Active)
+            return false;
+        if (msg.Msg == MessageType::PLAYER_INTERACT) {
             Ogre::Vector3 attackerPos = DereferenceToType<Ogre::Vector3>(msg.ExtraInfo);
-            if (attackerPos.distance(ActorNode->getPosition())) {
+            if (attackerPos.distance(ActorNode->getPosition()) < 5) {
                 LOG("Player fed succesfully!");
                 die();
                 Courier->DispatchMsg(SEND_MSG_IMMEDIATELY, ID, msg.Sender, MessageType::FEED_SUCCESSFUL);
             }
             return true;
+        } else if(msg.Msg == MessageType::TARGETED) {
+            enableTarget();
+        } else if(msg.Msg == MessageType::NOT_TARGETED) {
+            disableTarget();
+        } else if (msg.Msg == MessageType::RANDOM_TRAVEL && !InMotion) {
+            if (rand() % 100 < 25) {
+                travelRandom();
+            } else if (rand() % 100 < 10) {
+                Courier->DispatchMsg(rand() % 10000 + 5000, SENDER_ID_IRRELEVANT, ID, MessageType::RANDOM_TRAVEL);
+            }
+            return true;
         }
         return false;
+    }
+
+    void Actor::travelFromTo(int fromNode, int toNode) {
+        Graph::AStarSearch AStar(fromNode, toNode, WorldPtr->getGraph());
+        if (AStar.search()) {
+            std::vector<int> path = AStar.getPath();
+            for (unsigned int i = 0; i < path.size(); ++i) {
+                Ogre::Vector3 nextPos = WorldPtr->getGraph()->getNode(path[i]).getPos();
+                queueDestination(nextPos);
+                currentNode = path[path.size() - 1];
+            }
+        }
+    }
+
+    void Actor::travelRandom() {
+        int nodeCount = WorldPtr->getGraph()->nodeCount();
+        LOG("Traveling to random location");
+        while(true) {
+            int nextLocation = rand() % nodeCount;
+            if (nextLocation != currentNode) {
+                travelFromTo(currentNode, nextLocation);
+                return;
+            }
+        }
     }
 
     void Actor::bindToLUA() {
@@ -322,6 +391,7 @@ namespace SpellByte {
             .set< Actor, const Ogre::Vector3 >("getPosition", &Actor::getPosition)
             .set< Actor, void, Ogre::Vector3 >("queueDestination", &Actor::queueDestination)
             .set< Actor, void, Ogre::String, bool, bool >("setAnimation", &Actor::setAnimation)
-            .set< Actor, void, Ogre::Real >("setRealVelocity", &Actor::setRealVelocity);
+            .set< Actor, void, Ogre::Real >("setRealVelocity", &Actor::setRealVelocity)
+            .set< Actor, void, int, int >("travelFromTo", &Actor::travelFromTo);
     }
 }

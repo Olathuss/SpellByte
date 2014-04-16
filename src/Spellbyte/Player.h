@@ -82,13 +82,12 @@ namespace SpellByte
         void updateCollisionModel();
 
         // UI
-        Ogre::SceneNode * BloodUINode;
-        Ogre::Rectangle2D *BloodScreen;
+        CEGUI::Window *BloodScreen;
         bool showBlood;
         Ogre::Real bloodTime;
-        int bloodCount;
-        int bloodUp;
-        void displayBlood();
+        Ogre::Real bloodCount;
+        bool bloodUp;
+        void displayBlood(const Ogre::FrameEvent &evt);
 
         // Sad physics
         Ogre::Real gravity;

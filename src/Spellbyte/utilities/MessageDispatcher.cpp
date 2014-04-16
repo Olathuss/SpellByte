@@ -1,6 +1,7 @@
 #include "MessageDispatcher.h"
 #include "../ActorManager.h"
-#include "../define.h"
+#include <define.h>
+#include <World.h>
 #include "../console/LuaManager.h"
 
 namespace SpellByte {
@@ -23,7 +24,7 @@ namespace SpellByte {
 
     void MessageDispatcher::Discharge(BaseActor *receiver, const Telegram &telegram) {
         if (!receiver->handleMessage(telegram))
-            LOG("Message could not be handled");
+            LOG("Message could not be handled by: " + Ogre::StringConverter::toString(telegram.Receiver));
     }
 
     void MessageDispatcher::setPlayer(int ID, BaseActor *player) {
@@ -36,12 +37,13 @@ namespace SpellByte {
         BaseActor *pReceiver = nullptr;
         if (receiver == playerID && playerID != INVALID_ACTOR_ID && player)
             pReceiver = player;
+        else if (receiver == -2) // Temporary HACK
+            pReceiver = APP->getWorldPtr()->getCoffinPtr();
         else
             pReceiver = ActorMgr->getActorFromID(receiver);
 
         // ensure receiver is valid target
-        if(pReceiver == nullptr)
-        {
+        if(pReceiver == nullptr) {
             LOG("Warning! No receiver with ID of " + Ogre::StringConverter::toString(receiver) + " found for dispatching message");
 
             return;
@@ -51,14 +53,46 @@ namespace SpellByte {
         Telegram telegram(0, sender, receiver, msg, additionalInfo);
 
         // if there is no delay, send off msg now
-        if(delay <= 0.0)
-        {
+        if(delay <= 0.0) {
             LOG("Telegram dispatched");
 
             Discharge(pReceiver, telegram);
+        } else {
+            double CurrentTime = APP->getCurrentFrame();
+
+            telegram.DispatchTime = CurrentTime + delay;
+
+            // put it in the queue
+            PriorityQ.insert(telegram);
         }
+    }
+
+    void MessageDispatcher::DispatchMsg(double delay, int sender, int receiver, int msg, const void *additionalInfo) {
+        // ActorMgr not yet implemented
+        BaseActor *pReceiver = nullptr;
+        if (receiver == playerID && playerID != INVALID_ACTOR_ID && player)
+            pReceiver = player;
+        else if (receiver == -2) // Temporary HACK
+            pReceiver = APP->getWorldPtr()->getCoffinPtr();
         else
-        {
+            pReceiver = ActorMgr->getActorFromID(receiver);
+
+        // ensure receiver is valid target
+        if(pReceiver == nullptr) {
+            LOG("Warning! No receiver with ID of " + Ogre::StringConverter::toString(receiver) + " found for dispatching message");
+
+            return;
+        }
+
+        // create telegram
+        Telegram telegram(0, sender, receiver, msg, additionalInfo);
+
+        // if there is no delay, send off msg now
+        if(delay <= 0.0) {
+            LOG("Telegram dispatched");
+
+            Discharge(pReceiver, telegram);
+        } else {
             double CurrentTime = APP->getCurrentFrame();
 
             telegram.DispatchTime = CurrentTime + delay;
@@ -83,9 +117,7 @@ namespace SpellByte {
             const Telegram &telegram = *PriorityQ.begin();
 
             // get recipient
-            Actor *receiver = ActorMgr->getActorFromID(telegram.Receiver);
-
-            LOG("Sending telegram ready for dispatch");
+            BaseActor *receiver = ActorMgr->getActorFromID(telegram.Receiver);
 
             // send telegram
             Discharge(receiver, telegram);

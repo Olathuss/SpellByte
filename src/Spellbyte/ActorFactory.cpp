@@ -48,8 +48,8 @@ namespace SpellByte {
         worldPtr->setVector3Height(pos);
         newActor->setPositionXYZ(pos.x, pos.y, pos.z);
         //newActor->SceneNode->setPosition(Position);
-        newActor->setAnimation("NPCTalking", true, true);
         newActor->activate();
+        newActor->setAnimation("NPCTalking", true, false);
 
         return newActor;
     }

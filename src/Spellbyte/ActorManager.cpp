@@ -9,7 +9,7 @@ namespace SpellByte {
 
     ActorManager::ActorManager() {
         Actor::bindToLUA();
-        ActorVector = std::vector<Actor>(128);
+        ActorVector = std::vector<Actor>(32);
         ActorCount = 0;
     }
 
@@ -46,12 +46,10 @@ namespace SpellByte {
         }
 
         tinyxml2::XMLElement *actorElt = actorDoc->FirstChildElement("actor");
-        LOG("Loading required sets");
         tinyxml2::XMLElement *requiredElt = actorElt->FirstChildElement("required");
         tinyxml2::XMLElement *reqItem = requiredElt->FirstChildElement("item");
         while (reqItem) {
             Ogre::String requiredName = reqItem->GetText();
-            LOG("Loading Required: " + requiredName);
             Required.push_back(requiredName);
             tinyxml2::XMLElement *reqSet = actorElt->FirstChildElement(requiredName.c_str());
             ActorSet tmp;
@@ -59,7 +57,6 @@ namespace SpellByte {
                 tinyxml2::XMLElement *nextItem  = reqSet->FirstChildElement("item");
                 while (nextItem) {
                     Ogre::String itemName = nextItem->GetText();
-                    LOG("Available Item: " + itemName);
                     tmp.push_back(itemName);
                     nextItem = nextItem->NextSiblingElement("item");
                 }
@@ -70,17 +67,12 @@ namespace SpellByte {
         tinyxml2::XMLElement *setElt = actorElt->FirstChildElement("set");
         while (setElt) {
             Ogre::String setName = setElt->Attribute("name");
-            LOG("Loading Set: " + setName);
             SetNames.push_back(setName);
             SetPair setVector;
             tinyxml2::XMLElement *itemElt = setElt->FirstChildElement("item");
             while (itemElt) {
                 setVector.push_back(std::make_pair(itemElt->Attribute("type"), itemElt->GetText()));
                 itemElt = itemElt->NextSiblingElement("item");
-            }
-            LOG("Set Data: " + setName);
-            for(unsigned int i = 0; i < setVector.size(); ++i) {
-                LOG(setVector[i].first + "->" + setVector[i].second);
             }
             ActorSets.insert(std::make_pair(setName, setVector));
             setElt = setElt->NextSiblingElement("set");
@@ -89,8 +81,6 @@ namespace SpellByte {
 
     ActorManager::ActorSet ActorManager::getRandomSkin() {
         unsigned int whichSet = rand() % SetNames.size();
-        LOG("Random set: " + Ogre::StringConverter::toString(whichSet));
-        LOG("Random skin: " + SetNames[whichSet]);
         ActorSet haveParts;
         ActorSet skinSet;
         std::map<Ogre::String, SetPair>::iterator it;
@@ -113,16 +103,10 @@ namespace SpellByte {
                 skinSet.push_back(getPartIterator->second[rand() % getPartIterator->second.size()]);
             }
         }
-        LOG("Set returned:");
-        for (unsigned int i = 0; i < haveParts.size(); ++i) {
-            LOG(haveParts[i] + "->" + skinSet[i]);
-        }
         return skinSet;
     }
 
     Actor *ActorManager::getFreeActor() {
-        LOG("ActorCount: " + Ogre::StringConverter::toString(ActorCount) + " ActorVector.size: " +
-            Ogre::StringConverter::toString(ActorVector.size()));
         if (ActorCount < ActorVector.size()) {
             unsigned int id = ActorCount++;
             ActorVector[id].ID = id;

@@ -97,7 +97,7 @@ namespace SpellByte {
         bool init(tinyxml2::XMLElement *objElt, Ogre::SceneNode *parentNode = NULL);
         bool init();
 
-        ~Object();
+        virtual ~Object();
 
         // Add entity to object from Mesh
         Ogre::Entity* addEntity(std::string meshName, std::string groupName);
@@ -111,7 +111,7 @@ namespace SpellByte {
             return ObjectName;
         }
 
-        void saveObject(tinyxml2::XMLDocument *xmlDoc, tinyxml2::XMLElement *elt);
+        void saveObject(tinyxml2::XMLDocument *xmlDoc, tinyxml2::XMLElement *elt) const;
 
         // set object's ysnap, used when setting object's position
         void setYsnap(int newSnap);

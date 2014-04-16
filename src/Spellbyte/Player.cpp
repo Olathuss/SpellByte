@@ -9,8 +9,7 @@
 #include "utilities/Messages.h"
 #include "utilities/MessageDispatcher.h"
 
-namespace SpellByte
-{
+namespace SpellByte {
     Player::Player() : Subscriber() {
         PlayerID = -1;
         Courier->setPlayer(PlayerID, this);
@@ -26,11 +25,12 @@ namespace SpellByte
         COMM->registerSubscriber("player", this);
         collisionNode = NULL;
         Target = nullptr;
+        BloodScreen = nullptr;
         TargetedActor = -1;
     }
 
     Player::~Player() {
-
+        //BloodScreen->
     }
 
     void Player::bindToLUA() {
@@ -62,37 +62,33 @@ namespace SpellByte
         ActorNode->setDirection(Ogre::Vector3::UNIT_Z);
 
         //enabledCollision = false;
+        collisionMask = 0;
         collisionMask |= World::COLLISION_MASK::STATIC;
-        collisionNode = sceneMgr->getRootSceneNode()->createChildSceneNode("PlayCollisionNode");
-        Ogre::Entity *collideEntity = sceneMgr->createEntity("PlayerEntity", "player.mesh", "General");
-        collisionModel = newCollisionModel3D(false);
-        addTrianglesToColdet(collideEntity, collisionModel);
-        collisionModel->finalize();
-        collisionNode->attachObject(collideEntity);
-        collisionNode->setPosition(ActorNode->getPosition());
-        updateCollisionModel();
+        collisionMask |= World::COLLISION_MASK::ACTOR;
+        //collisionNode = sceneMgr->getRootSceneNode()->createChildSceneNode("PlayCollisionNode");
+        //Ogre::Entity *collideEntity = sceneMgr->createEntity("PlayerEntity", "player.mesh", "General");
+        //collisionModel = newCollisionModel3D(false);
+        //addTrianglesToColdet(collideEntity, collisionModel);
+        //collisionModel->finalize();
+        //collisionNode->attachObject(collideEntity);
+        //collisionNode->setPosition(ActorNode->getPosition());
+        //updateCollisionModel();
 
         targetNode = sceneMgr->getRootSceneNode()->createChildSceneNode("PlayerTargetNode");
 
-        int ScreenX = APP->Viewport->getActualHeight();
-        int ScreenY = APP->Viewport->getActualWidth();
-        double XRatio = ScreenX/1600.0;
-        double YRatio = ScreenY/900.0;
-
-        BloodScreen = new Ogre::Rectangle2D(true);
-        BloodScreen->setCorners(-2.08*XRatio,YRatio/1.5,2.08*XRatio,-1*YRatio/1.5);
-        BloodScreen->setMaterial("Blood");
-        BloodScreen->setRenderQueueGroup(Ogre::RENDER_QUEUE_BACKGROUND);
-
-        Ogre::AxisAlignedBox box;
-        box.setInfinite();
-        BloodScreen->setBoundingBox(box);
-
-        BloodUINode = sceneMgr->getRootSceneNode()->createChildSceneNode("BloodScreen");
-        BloodUINode->attachObject(BloodScreen);
-        BloodUINode->setVisible(false);
-        bloodCount = 255;
+        bloodCount = 0.0;
         bloodUp = false;
+        showBlood = false;
+
+        if(!BloodScreen) {
+            BloodScreen = CEGUI::WindowManager::getSingleton().createWindow("SpellByte/StaticImage","BloodUI");
+            BloodScreen->setPosition(CEGUI::UVector2(CEGUI::UDim(0, 0), CEGUI::UDim(0, 0)));
+            BloodScreen->setSize(CEGUI::USize(CEGUI::UDim(1, 0), CEGUI::UDim(1, 0)));
+            BloodScreen->setProperty("Image", "SpellByteImages/Blood");
+            BloodScreen->setAlpha(0);
+            BloodScreen->setVisible(false);
+            APP->ceguiContext->getRootWindow()->addChild(BloodScreen);
+        }
 
         bindToLUA();
         return true;
@@ -183,15 +179,13 @@ namespace SpellByte
             playerFeed();
         }
         if (showBlood)
-            displayBlood();
+            displayBlood(evt);
     }
 
     void Player::playerFeed() {
-        if (!Target)
+        if (TargetedActor < 0 && TargetedActor != -2)
             return;
-        //Ogre::Vector3 targetPos = Target->getPosition();
-        //Ogre::Vector3 *myPosition = new Ogre::Vector3(ActorNode->getPosition());
-        Courier->DispatchMsg(SEND_MSG_IMMEDIATELY, -1, TargetedActor, MessageType::PLAYER_FED, &ActorNode->getPosition());
+        Courier->DispatchMsg(SEND_MSG_IMMEDIATELY, -1, TargetedActor, MessageType::PLAYER_INTERACT, &ActorNode->getPosition());
     }
 
     bool Player::handleMessage(const Telegram &msg) {
@@ -201,41 +195,38 @@ namespace SpellByte
             feedSuccess();
             return true;
         }
+        return false;
     }
 
     void Player::feedSuccess() {
-        /*CEGUI::Window *myImageWindow = CEGUI::WindowManager::getSingleton().createWindow("TaharezLook/StaticImage","BloodUI");
-        myImageWindow->setPosition(CEGUI::UVector2(CEGUI::UDim(0, 0), CEGUI::UDim(0, 0)));
-        myImageWindow->setSize(CEGUI::USize(CEGUI::UDim(1, 0), CEGUI::UDim(1, 0)));
-        myImageWindow->setProperty("Image", "set:SpellByteImages image:full_image");
-        APP->ceguiContext->getRootWindow()->addChild(myImageWindow);*/
-        BloodUINode->setVisible(true);
+        BloodScreen->setVisible(true);
         showBlood = true;
-        bloodTime = APP->getCurrentFrame() + 5000;
-        bloodCount = 255;
+        bloodTime = APP->getCurrentFrame() + 4000;
+        bloodCount = 0.0;
     }
 
-    void Player::displayBlood() {
-        Ogre::MaterialPtr mat = BloodScreen->getMaterial();
-        LOG("DisplayBlood: " + Ogre::StringConverter::toString(bloodCount));
-        if (bloodCount < 128)
-            bloodUp = true;
-        else if (bloodCount >= 255)
-            bloodUp = false;
-        if (bloodUp)
-            mat->getTechnique(0)->getPass(0)->setAlphaRejectValue((unsigned char)bloodCount++);
-        else
-            mat->getTechnique(0)->getPass(0)->setAlphaRejectValue((unsigned char)bloodCount--);
-        bloodTime--;
+    void Player::displayBlood(const Ogre::FrameEvent &evt) {
         if (bloodTime < APP->getCurrentFrame()) {
             showBlood = false;
-            BloodUINode->setVisible(false);
+            BloodScreen->setVisible(false);
+            return;
         }
+
+        if (bloodCount <= 0)
+            bloodUp = true;
+        else if (bloodCount >= 1.0)
+            bloodUp = false;
+        if (bloodUp)
+            bloodCount  += 0.4 * evt.timeSinceLastFrame;
+        else
+            bloodCount -= 0.4 * evt.timeSinceLastFrame;
+        BloodScreen->setAlpha(bloodCount);
+        BloodScreen->invalidate();
     }
 
     void Player::getTarget() {
-        if (Target) {
-            Target->disableTarget();
+        if (TargetedActor >= 0 || TargetedActor == -2) {
+            Courier->DispatchMsg(SEND_MSG_IMMEDIATELY, -1, TargetedActor, MessageType::NOT_TARGETED);
         }
         Ogre::Vector3 translateVector = Ogre::Vector3::ZERO;
         translateVector.z = 5.0f;
@@ -250,22 +241,23 @@ namespace SpellByte
         //target.normalise();
         Ogre::Ray ray(oldPos, targetNode->getPosition());
         RSQ->setRay(ray);
-        RSQ->setQueryMask(World::ACTOR);
+        RSQ->setQueryMask(World::COLLISION_MASK::ACTOR);
         Ogre::RaySceneQueryResult &result = RSQ->execute();
         Ogre::RaySceneQueryResult::iterator itr;
         for(itr = result.begin(); itr != result.end(); itr++) {
             if ((itr->movable != NULL)  &&
                 (itr->movable->getMovableType().compare("Entity") == 0)) {
                 Ogre::Entity *pentity = static_cast<Ogre::Entity*>(itr->movable);
+                LOG("Potential target: " + pentity->getName());
                 Ogre::Any nodeAny = pentity->getParentSceneNode()->getUserAny();
                 if (nodeAny.isEmpty())
                     continue;
-                SpellByte::UserAny* any = Ogre::any_cast<SpellByte::UserAny*>(nodeAny);
+                SpellByte::UserAny *any = Ogre::any_cast<SpellByte::UserAny*>(nodeAny);
                 if (any->Type != UserAny::ACTOR)
                     continue;
                 TargetedActor = any->ID;
-                Target = ActorMgr->getActorFromID(any->ID);
-                Target->enableTarget();
+                LOG("TARGETING:" + Ogre::StringConverter::toString(TargetedActor));
+                Courier->DispatchMsg(SEND_MSG_IMMEDIATELY, -1, TargetedActor, MessageType::TARGETED);
                 return;
             } // if ((itr->movable != NULL)  &&
         } // for(itr = result.begin(); itr != result.end(); itr++)
@@ -320,7 +312,11 @@ namespace SpellByte
             enableAction(PLAYER_FEED);
             break;
         case UserEvent::PLAYER_SET_CLIPPING:
-            enabledCollision = (enabledCollision == false) ? true : false;
+            enabledCollision = enabledCollision ? false : true;
+            if(enabledCollision)
+                LOG("Collision enabled");
+            else
+                LOG("Collision disabled");
             break;
         }
     }
@@ -335,11 +331,9 @@ namespace SpellByte
         bool move = false;
         if(PlayerAction & PLAYER_UP && !enabledCollision) {
             ActorNode->setPosition(ActorNode->getPosition() + Ogre::Vector3(0, moveScale, 0));
-            move = true;
         }
         if(PlayerAction & PLAYER_DOWN && !enabledCollision) {
             ActorNode->setPosition(ActorNode->getPosition() - Ogre::Vector3(0, moveScale, 0));
-            move = true;
         }
         if(PlayerAction & PLAYER_FORWARD) {
             translateVector.z = -moveScale;
@@ -393,7 +387,7 @@ namespace SpellByte
 
         if(enabledCollision) {
             collisionHandler->calculateY(ActorNode,true,true,1.5f,1);
-            if (collisionHandler->collidesWithEntity(oldPos, ActorNode->getPosition(), collisionRadius, -1.0f, -1)) {
+            if (collisionHandler->collidesWithEntity(oldPos, ActorNode->getPosition(), collisionRadius, -1.0f, collisionMask)) {
                 ActorNode->setPosition(oldPos);
             }
             else if(ActorNode->getPosition().y - oldPos.y > playerHeight * .4) {

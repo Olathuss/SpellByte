@@ -161,10 +161,12 @@ namespace SpellByte {
             delete coldetModel;
             coldetModel = nullptr;
         }
-        if (ObjectAny) {
+        // delete causes assert error within Ogre
+        // but using a pointer is the only way to get UserAny to work so far.
+        /*if (ObjectAny) {
             delete ObjectAny;
             ObjectAny = nullptr;
-        }
+        }*/
     }
 
     bool Object::init() {
@@ -250,6 +252,8 @@ namespace SpellByte {
                         entity->setVisible(false);
                     }
                 }
+
+                entity->setQueryFlags(World::COLLISION_MASK::STATIC);
             }
             meshElt = meshElt->NextSiblingElement("mesh");
         }
@@ -386,7 +390,7 @@ namespace SpellByte {
     }
 
     // Saves object to XML
-    void Object::saveObject(tinyxml2::XMLDocument *xmlDoc, tinyxml2::XMLElement *elt) {
+    void Object::saveObject(tinyxml2::XMLDocument *xmlDoc, tinyxml2::XMLElement *elt) const {
         tinyxml2::XMLElement *objElt = xmlDoc->NewElement("object");
         elt->InsertEndChild(objElt);
         // Set object name/group
@@ -394,7 +398,7 @@ namespace SpellByte {
         objElt->SetAttribute("group", DefaultGroup.c_str());
 
         // Loop through different meshes and save to XML
-        const Ogre::SceneNode::ObjectIterator it = ObjectNode->getAttachedObjectIterator();
+        Ogre::SceneNode::ObjectIterator it = ObjectNode->getAttachedObjectIterator();
         while(it.hasMoreElements()) {
             tinyxml2::XMLElement *meshElt = xmlDoc->NewElement("mesh");
             objElt->InsertEndChild(meshElt);
@@ -405,7 +409,7 @@ namespace SpellByte {
             meshElt->SetAttribute("group", entity->getMesh()->getGroup().c_str());
 
             // If mesh had particular material, save this to XML
-            std::map<std::string, std::string>::iterator matIterator;
+            std::map<std::string, std::string>::const_iterator matIterator;
             matIterator = meshMaterials.find(entity->getMesh()->getName().c_str());
             if (matIterator != meshMaterials.end()) {
                 meshElt->SetAttribute("material", matIterator->second.c_str());
@@ -464,10 +468,8 @@ namespace SpellByte {
         }
         // Allow Ogre's SceneNode to refer to this as its owner
         // Useful for colliision callback, event referal etc.
-        LOG("Setting UserAny");
         ObjectAny = new UserAny(UserAny::OBJECT, ID);
         ObjectNode->setUserAny(Ogre::Any(ObjectAny));
-        LOG("Setting UserAny");
     }
 
     void Object::handleMessage(const Telegram &msg) {

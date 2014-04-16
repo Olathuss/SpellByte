@@ -21,8 +21,15 @@
 #define MAJOR_SUPPORT 1
 #define MINOR_SUPPORT 0
 
+#include <actor/InteractableObject.h>
+#include <graph/Nodes.h>
+#include <graph/Edges.h>
+#include <graph/Graph.h>
+#include <graph/GraphLoader.h>
+
 namespace SpellByte
 {
+    //! World class, contains world information
     class World
     {
     public:
@@ -44,6 +51,10 @@ namespace SpellByte
         bool newWorldLoad();
         void createScene();
         void destroyScene();
+
+        Graph::Graph *getGraph() {
+            return &worldGraph;
+        }
 
         int getMaskFromString(std::string maskType) {
             if (maskType == "NONE") {
@@ -80,6 +91,8 @@ namespace SpellByte
         const float getDataFloat(std::string ID) const;
         bool hasDataInt(std::string ID) const;
         const int getDataInt(std::string ID) const;
+
+        BaseActor *getCoffinPtr() { return &coffin; }
 
     private:
         struct Layer {
@@ -164,5 +177,12 @@ namespace SpellByte
         std::map<std::string, int> worldInts;
         int worldVersionMajor;
         int worldVersionMinor;
+
+        // Graph related
+        Graph::Graph worldGraph;
+        Graph::GraphLoader graphLoader;
+
+        // World objects, tmp hack
+        Coffin coffin;
     };
 }

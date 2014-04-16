@@ -27,7 +27,8 @@ THE SOFTWARE.
 #ifndef COLLISIONTOOLS_H
 #define COLLISIONTOOLS_H
 
-#pragma warning (disable : 4530)
+// pragma disable warning gives warning
+//#pragma warning (disable : 4530)
 
 #include "stdafx.h"
 #include <Terrain/OgreTerrainGroup.h>

@@ -51,6 +51,13 @@ extern "C" {
             std::cerr << "An exception has occured: " <<
                         e.getMessage().c_str() << std::endl;
 #endif // WIN32_LEAN_AND_MEAN
+        } catch(std::exception &e) {
+#ifdef WIN32_LEAN_AND_MEAN
+            MessageBox( NULL, e.what(), "An exception has occured", MB_OK | MB_ICONERROR | MB_TASKMODAL);
+#else
+            std::cerr << "An exception has occured: " <<
+                        e.what()) << std::endl;
+#endif // WIN32_LEAN_AND_MEAN
         }
 
 #ifdef WIN32_LEAN_AND_MEAN

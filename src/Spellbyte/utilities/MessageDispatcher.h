@@ -25,8 +25,7 @@
 // Use Courier to access MessageDispatcher singleton
 #define Courier MessageDispatcher::getInstance()
 
-namespace SpellByte
-{
+namespace SpellByte {
      // predefined values
     const double SEND_MSG_IMMEDIATELY = 0.0;
     const int NO_ADDITIONAL_INFO = 0;
@@ -34,8 +33,7 @@ namespace SpellByte
 
     class Player;
 
-    class MessageDispatcher
-    {
+    class MessageDispatcher {
     private:
         bool boundToLUA;
 
@@ -72,6 +70,8 @@ namespace SpellByte
         // send message to another Actor.  Receiving Actor is referenced
         // by ID.
         void DispatchMsg(double delay, int sender, int receiver, int msg, void *additionalInfo = nullptr);
+        // For const void*
+        void DispatchMsg(double delay, int sender, int receiver, int msg, const void *additionalInfo);
 
         // send out any delayed messages.  Called once each time through main loop
         void DispatchDelayedMessages();

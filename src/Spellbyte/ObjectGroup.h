@@ -49,10 +49,6 @@ namespace SpellByte {
         // save group to XML
         void saveGroup(tinyxml2::XMLDocument *xmlDoc, tinyxml2::XMLElement *elt);
 
-        /*void setPosition(const Ogre::Real x, const Ogre::Real y, const Ogre::Real z);
-        void setScale(const Ogre::Real x, const Ogre::Real y, const Ogre::Real z);
-        void setRotate(const Ogre::Radian roll, const Ogre::Radian pitch, const Ogre::Radian yaw);*/
-
         Ogre::SceneNode *GroupNode;
         ObjectGroup *parentGroup;
     };

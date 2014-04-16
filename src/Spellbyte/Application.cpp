@@ -50,6 +50,7 @@ namespace SpellByte {
         GameStateManager(0) {
         language = "english";
         currentDifficulty = "easy";
+        loopCount = 0;
     }
 
     Application::~Application(void) {
@@ -62,7 +63,6 @@ namespace SpellByte {
 
         ceguiContext = NULL;
         ceguiRenderer = NULL;
-        enabledCollision = true;
 
         if (GameStateManager) {
             delete GameStateManager;
@@ -116,46 +116,46 @@ namespace SpellByte {
     }
 
     bool Application::frameRenderingQueued(const Ogre::FrameEvent &evt) {
-            //static int loopcount = 1;
-            //LOG("Start of loop #" + Ogre::StringConverter::toString(loopcount));
-            //LOG("WindowEvent pump");
-            // Pop Window's event messages off
-            Ogre::WindowEventUtilities::messagePump();
+        //static int loopcount = 1;
+        //LOG("Start of loop #" + Ogre::StringConverter::toString(loopCount));
+        //LOG("WindowEvent pump");
+        // Pop Window's event messages off
+        //LOG("Pump window messages");
+        Ogre::WindowEventUtilities::messagePump();
 
-            // Capture events
-            //LOG("Capture events");
-            Keyboard->capture();
-            Mouse->capture();
+        // Capture events
+        //LOG("Capture events");
+        Keyboard->capture();
+        Mouse->capture();
 
-            // Handle events
-            //LOG("Handle events");
-            GameStateManager->handleEvents();
+        // Handle events
+        //LOG("Handle events");
+        //LOG("Handling events");
+        GameStateManager->handleEvents();
 
-            // Update game logic
-            //LOG("Update GameStateManager");
-            GameStateManager->update(evt);
+        // Update game logic
+        //LOG("Update GameStateManager");
+        //LOG("Updating game manager");
+        GameStateManager->update(evt);
+        //LOG("Game manager updated");
 
 #ifdef AUDIO
-            // Update AudioManager
-            AUDIOMAN->update(evt);
+        //LOG("Updating audio");
+        // Update AudioManager
+        AUDIOMAN->update(evt);
+        //LOG("Audio updated");
 #endif
 
-            // If Window is closed, then quit
-            //LOG("Check RenderWindow closed");
-            if (RenderWindow->isClosed()) {
-                return false;
-            }
+        // If Window is closed or GameManager reports shutdown, then quit
+        //LOG("Check RenderWindow closed");
+        if (RenderWindow->isClosed() || GameStateManager->hasShutdown()) {
+            return false;
+        }
 
-            // If game has signal shut down, then quit
-            //LOG("Check for shutdown");
-            if (GameStateManager->hasShutdown()) {
-                return false;
-            }
-
-            // Continue
-            //LOG("return true");
-            //loopcount++;
-            return true;
+        // Continue
+        //LOG("return true");
+        loopCount++;
+        return true;
     }
 
     void Application::execute() {

@@ -1,21 +1,20 @@
 #include <cstdlib>
 #include <time.h>
 #include "World.h"
-#include "define.h"
-#include "ActorManager.h"
-#include "ActorFactory.h"
-#include "console/LuaManager.h"
-#include "DotSceneLoader.h"
-#include "utilities/utils.h"
+#include <define.h>
+#include <ActorManager.h>
+#include <ActorFactory.h>
+#include <console/LuaManager.h>
+#include <utilities/utils.h>
 #include "world/Water.h"
+#include <graph/AStarSearch.h>
 
 // Does this need to be somewhere?
 // WaterCircle::clearStaticBuffers();
 
 namespace SpellByte
 {
-    void prepareCircleMaterial()
-    {
+    void prepareCircleMaterial() {
         char *bmap = new char[256 * 256 * 4] ;
         memset(bmap, 127, 256 * 256 * 4);
         for(int b=0;b<16;b++) {
@@ -48,19 +47,18 @@ namespace SpellByte
                                                    ResourceGroupManager::DEFAULT_RESOURCE_GROUP_NAME,
                                                    imgstream, 256, 256, PF_A8R8G8B8);
         MaterialPtr material =
-        MaterialManager::getSingleton().create( CIRCLES_MATERIAL,
+        MaterialManager::getSingleton().create(CIRCLES_MATERIAL,
                                                ResourceGroupManager::DEFAULT_RESOURCE_GROUP_NAME);
-        TextureUnitState *texLayer = material->getTechnique(0)->getPass(0)->createTextureUnitState( CIRCLES_MATERIAL );
-        texLayer->setTextureAddressingMode( TextureUnitState::TAM_CLAMP );
-        material->setSceneBlending( SBT_ADD );
-        material->setDepthWriteEnabled( false ) ;
+        TextureUnitState *texLayer = material->getTechnique(0)->getPass(0)->createTextureUnitState(CIRCLES_MATERIAL);
+        texLayer->setTextureAddressingMode(TextureUnitState::TAM_CLAMP);
+        material->setSceneBlending(SBT_ADD);
+        material->setDepthWriteEnabled(false) ;
         material->load();
         // finished with bmap so release the memory
         delete [] bmap;
     }
 
-    World::World()
-    {
+    World::World():graphLoader(this, false) {
         srand(time(NULL));
 
         dirLightColor.r = APP->getConfigFloat("directionalr");
@@ -318,6 +316,10 @@ namespace SpellByte
         }
 
         loadObjects(worldElt);
+        coffin.init(this);
+
+        element = worldElt->FirstChildElement("graph");
+        graphLoader.loadGraph(&worldGraph, element);
 
         xmlFile->unload();
         APP->xmlManager->unload(worldFile);
@@ -331,15 +333,18 @@ namespace SpellByte
         return true;
     }
 
-    void World::clearWorld()
-    {
-        DeleteSTLContainer(WorldGroups);
+    void World::clearWorld() {
+        if (!WorldGroups.empty())
+            DeleteSTLContainer(WorldGroups);
         WorldGroups.clear();
-        DeleteSTLContainer(WorldObjects);
+        if (!WorldObjects.empty())
+            DeleteSTLContainer(WorldObjects);
         WorldObjects.clear();
+        graphLoader.clearGraph();
         ActorMgr->clearActors();
         if(objectsNode)
             objectsNode->removeAndDestroyAllChildren();
+        coffin.reset();
         SceneMgr->destroyAllEntities();
         SceneMgr->destroyAllLights();
         ActorMgr->reset();
@@ -348,41 +353,33 @@ namespace SpellByte
         heightMaps.clear();
     }
 
-    bool World::reload()
-    {
+    bool World::reload() {
         clearWorld();
         LOG("World: Reloading world");
         loadWorld(worldName);
         return true;
     }
 
-    void World::loadObjects(tinyxml2::XMLElement *worldElt)
-    {
+    void World::loadObjects(tinyxml2::XMLElement *worldElt) {
         LOG("World: Parsing Static Objects");
         tinyxml2::XMLElement *element = worldElt->FirstChildElement("static");
         ObjectFactory objFactory = ObjectFactory();
-        if(element)
-        {
+        if(element) {
             LOG("Loading Independent Objects");
             loadIndependentObjects(element, &objFactory);
 
             LOG("Loading Groups");
-            //Ogre::SceneNode *groupNode = objectsNode->createChildSceneNode(grpName);
-            //processGroup(element, &objFactory);
             processGroup(element, &objFactory, objectsNode);
         }
 
-        for(unsigned int i = 0; i < WorldGroups.size(); i++)
-        {
+        for(unsigned int i = 0; i < WorldGroups.size(); i++) {
             WorldGroups[i]->resetY();
         }
     }
 
-    void World::processGroup(tinyxml2::XMLElement *groupElt, ObjectFactory *objFactory, Ogre::SceneNode *grpNode)
-    {
+    void World::processGroup(tinyxml2::XMLElement *groupElt, ObjectFactory *objFactory, Ogre::SceneNode *grpNode) {
         tinyxml2::XMLElement *group = groupElt->FirstChildElement("group");
-        while (group)
-        {
+        while (group) {
             ObjectGroup *objGroup = new ObjectGroup();
             objGroup->init(group, objFactory, grpNode);
             WorldGroups.push_back(objGroup);
@@ -390,11 +387,9 @@ namespace SpellByte
         }
     }
 
-    void World::loadIndependentObjects(tinyxml2::XMLElement *elt, ObjectFactory *objFactory)
-    {
+    void World::loadIndependentObjects(tinyxml2::XMLElement *elt, ObjectFactory *objFactory) {
         tinyxml2::XMLElement *object = elt->FirstChildElement("object");
-        while(object)
-        {
+        while(object) {
             LOG("Creating Objects: " + Ogre::String(object->Attribute("name")));
             WorldObjects.push_back(objFactory->createObject(object, objectsNode));
 

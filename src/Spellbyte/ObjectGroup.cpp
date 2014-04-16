@@ -12,9 +12,11 @@ namespace SpellByte {
     }
 
     ObjectGroup::~ObjectGroup() {
-        DeleteSTLContainer(ObjectGroupVector);
+        if (!ObjectGroupVector.empty())
+            DeleteSTLContainer(ObjectGroupVector);
         ObjectGroupVector.clear();
-        DeleteSTLContainer(ObjectVector);
+        if (!ObjectVector.empty())
+            DeleteSTLContainer(ObjectVector);
         ObjectVector.clear();
         GroupNode->removeAndDestroyAllChildren();
     }
@@ -171,31 +173,4 @@ namespace SpellByte {
     void ObjectGroup::addObjectGroup(ObjectGroup *addObjGroup) {
         ObjectGroupVector.push_back(addObjGroup);
     }
-
-    /*void ObjectGrop::setPosition(const Ogre::Real x, const Ogre::Real y, const Ogre::Real z)
-    {
-        std::vector<Object*>::iterator it;
-        for(it = ObjectVector.begin(); it != ObjectVector.end(); it++)
-        {
-            *it->setPosition(x, y, z);
-        }
-    }
-
-    void ObjectGrop::setScale(const Ogre::Real x, const Ogre::Real y, const Ogre::Real z)
-    {
-        std::vector<Object*>::iterator it;
-        for(it = ObjectVector.begin(); it != ObjectVector.end(); it++)
-        {
-            //*it->setPosition(x, y, z);
-        }
-    }
-
-    void ObjectGrop::setRotate(const Ogre::Radian roll, const Ogre::Radian pitch, const Ogre::Radian yaw)
-    {
-        std::vector<Object*>::iterator it;
-        for(it = ObjectVector.begin(); it != ObjectVector.end(); it++)
-        {
-            //*it->setPosition(x, y, z);
-        }
-    }*/
 }

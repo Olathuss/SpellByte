@@ -15,6 +15,8 @@
 #ifndef _WAVRESFILE_H_
 #define _WAVRESFILE_H_
 
+//#define AUDIO
+
 #include <OgreResourceManager.h>
 #include <AL/al.h>
 #include <AL/alc.h>

@@ -24,21 +24,30 @@ namespace SpellByte {
     friend class Wander;
 
     public:
+        //! Bind Actor class to LUA, should only be called once.
         static void bindToLUA();
 
     private:
-        // Each Actor uses an ID as an external ID for GameLogic reference
+        //! Each Actor uses an ID as an external ID for GameLogic reference
         ActorID ID;
 
-        // Mark Actor has active or inactive
+        //! Mark Actor has active or inactive
         bool active;
         bool dead;
 
         bool Active;
 
+        // Rotate actor
         void rotateActor(const Ogre::FrameEvent &evt);
 
+        void animateIdle();
+
+        static bool initAnimationList;
+
+        static std::vector<Ogre::String> idleAnimations;
+
     protected:
+        //! State machine for Actor A.I.
         StateMachine<Actor> *ActorFSM;
 
         Ogre::AnimationState *AnimationState;
@@ -55,6 +64,7 @@ namespace SpellByte {
 
         bool InMotion;
         bool NeedTravel;
+        int currentNode;
 
         Ogre::Real Mass;
         Ogre::Real MaxSpeed;
@@ -67,16 +77,22 @@ namespace SpellByte {
         std::deque<Ogre::Vector3> WalkList;
 
     public:
+        //! Constructor, should not be called directly
+        /*!
+            Instead use ActorMgr::getFreeActor()
+        */
         Actor();
 
+        //! Constructor
         ~Actor();
 
-        // Update components
+        //! Update Actor
         virtual void update(const Ogre::FrameEvent &evt);
 
-        // entities handle messages, pass telegram to each component
+        //! Handle messages
         virtual bool handleMessage(const Telegram &msg);
 
+        //! Set current nonmotion animation for Actor
         void setAnimation(Ogre::String animName, bool loop, bool enabled);
 
         // Check if this actor is active or not
@@ -85,6 +101,9 @@ namespace SpellByte {
         void clear();
         void deactivate();
         void activate();
+
+        void travelFromTo(int fromNode, int toNode);
+        void travelRandom();
 
         // For targeting
         void enableTarget();

@@ -1,6 +1,6 @@
 #include "GameState.h"
-#include "../define.h"
-#include "../utilities/MessageDispatcher.h"
+#include <define.h>
+#include <utilities/MessageDispatcher.h>
 
 namespace SpellByte {
     GameState::GameState() {
@@ -29,12 +29,12 @@ namespace SpellByte {
 
         //CameraMan = new OgreBites::SdkCameraMan(Camera);
 
-        gameWorld.init(Camera, &player);
-        gameWorld.loadWorld(APP->getConfigString("world"));
-        player.init(SceneMgr, Camera, &gameWorld);
         LOG("Building GUI");
         buildGUI();
         LOG("GUI complete");
+        gameWorld.init(Camera, &player);
+        gameWorld.loadWorld(APP->getConfigString("world"));
+        player.init(SceneMgr, Camera, &gameWorld);
         LOG("Creating scene");
         createScene();
         LOG("Scene creation complete");
@@ -68,8 +68,7 @@ namespace SpellByte {
 
         destroyScene();
 
-        if(mCollisionTools)
-        {
+        if(mCollisionTools) {
             delete mCollisionTools;
         }
 
@@ -112,16 +111,14 @@ namespace SpellByte {
         gameWorld.update(evt);
 
         if(debugBox) {
-            Ogre::String debugText;
+            Ogre::String debugText = "";
 
-            debugText =
-                Ogre::String("FPS: " +
-                             Ogre::StringConverter::toString(APP->RenderWindow->getAverageFPS()) +
-                             "\n" +
-                             "Triangle Count: " +
-                             Ogre::StringConverter::toString(APP->RenderWindow->getTriangleCount()) +
-                             "\n" +
-                             player.getDebugString());
+            debugText = "FPS: " +
+                        Ogre::StringConverter::toString(APP->RenderWindow->getAverageFPS()) +
+                        "\nTriangle Count: " +
+                        Ogre::StringConverter::toString(APP->RenderWindow->getTriangleCount()) +
+                        "\n" +
+                        player.getDebugString();
             debugBox->setText(debugText.c_str());
         }
 

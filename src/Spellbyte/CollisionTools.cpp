@@ -208,7 +208,7 @@ bool CollisionTools::raycastFromPoint(const Vector3 &point,
 
 bool CollisionTools::raycast(const Ray &ray, Vector3 &result,ulong &target,float &closest_distance, const uint32 queryMask)
 {
-	target = NULL;
+	target = 0;
 
     // check we are initialised
     if (mRaySceneQuery != NULL)

@@ -8,14 +8,13 @@
  *
  */
 
+#include "WAVResourceFile.h"
 #ifdef AUDIO
 #include <AL/alc.h>
-#include "WAVResourceFile.h"
 #include "../utilities/easyzlib.h"
 #include "../utilities/utils.h"
 #include "file_defines.h"
 #include "ManualLoaders.h"
-#include "../SpellByte.h"
 
 namespace SpellByte {
     WAVFile::WAVFile(Ogre::ResourceManager *creator, const Ogre::String &name,
@@ -342,24 +341,24 @@ namespace SpellByte {
         alcMakeContextCurrent(context);
         err = alGetError();
         if(err != AL_NO_ERROR) {
-            return;
+            return false;
         }
 
         alListener3f(AL_POSITION, 0, 0, 0);
         err = alGetError();
         if(err != AL_NO_ERROR) {
-            return;
+            return false;
         }
         alListener3f(AL_VELOCITY, 0, 0, 0);
         err = alGetError();
         if(err != AL_NO_ERROR) {
-            return;
+            return false;
         }
         ALfloat	listenerOri[]={0.0,0.0,-1.0, 0.0,1.0,0.0};
         alListenerfv(AL_ORIENTATION,listenerOri);
         err = alGetError();
         if(err != AL_NO_ERROR) {
-            return;
+            return false;
         }
         //ALuint source;
         //ALuint buffer;

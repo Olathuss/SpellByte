@@ -2,6 +2,7 @@
 #define BASE_ACTOR_H
 
 #include "../UserAny.h"
+#include <stdafx.h>
 
 /*
     This is an abstract BaseActor class
@@ -15,16 +16,24 @@ namespace SpellByte {
     // Telegram for actor communication
     struct Telegram;
 
+    class World;
     class BaseActor {
     public:
         BaseActor() {
+            ActorNode = nullptr;
+            WorldPtr = nullptr;
+            ActorEntity = nullptr;
             setID();
         }
         virtual ~BaseActor() {
+            if(ActorNode) {
+                ActorNode->removeAndDestroyAllChildren();
+                ActorNode = nullptr;
+            }
             WorldPtr = nullptr;
         };
 
-        setWorldPtr(World *world) {
+        void setWorldPtr(World *world) {
             WorldPtr = world;
         }
 
