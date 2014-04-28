@@ -76,6 +76,8 @@ namespace SpellByte {
 
         std::deque<Ogre::Vector3> WalkList;
 
+        std::vector<Ogre::String> visibleParts;
+
     public:
         //! Constructor, should not be called directly
         /*!
@@ -112,6 +114,10 @@ namespace SpellByte {
 
         void queueDestination(Ogre::Vector3 dest);
         bool nextLocation();
+
+        void setVisibleParts(std::vector<Ogre::String> subEntities) {
+            visibleParts = subEntities;
+        }
 
         Ogre::Vector3 velocity()const {
             return Velocity;

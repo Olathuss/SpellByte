@@ -8,6 +8,8 @@ enum MessageType {
     FEED_SUCCESSFUL,
     TARGETED,
     NOT_TARGETED,
+    SLEEP,
+    END_SLEEP,
     RANDOM_TRAVEL
 };
 
@@ -23,6 +25,10 @@ inline std::string msgToString(int msg) {
         return "Actor no longer targeted";
     case RANDOM_TRAVEL:
         return "Try a random travel";
+    case SLEEP:
+        return "Player sleep";
+    case END_SLEEP:
+        return "End sleep";
     default:
         return "Unknown message";
     }

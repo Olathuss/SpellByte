@@ -156,6 +156,7 @@ namespace SpellByte {
     void Actor::die() {
         if (dead)
             return;
+        disableTarget();
         MotionAnimation->setEnabled(false);
         MotionAnimation->setTimePosition(0);
         InMotion = false;
@@ -205,6 +206,14 @@ namespace SpellByte {
         currentNode = rand() % WorldPtr->getGraph()->nodeCount();
         setPosition(WorldPtr->getGraph()->getNode(currentNode).getPos());
         ActorAny->ID = ID;
+
+        for (unsigned int i = 0; i < visibleParts.size(); ++i) {
+            Ogre::SubEntity *sEnt;
+            sEnt = ActorEntity->getSubEntity(visibleParts[i]);
+            sEnt->setVisible(true);
+            //sEnt->getMaterial()->setReceiveShadows(true);
+        }
+
         dead = false;
     }
 
@@ -221,13 +230,11 @@ namespace SpellByte {
 
         */
 
-        unsigned short count = ActorEntity->getNumSubEntities();
-
         const Ogre::String file_name = "rim.dds";
         const Ogre::String rim_material_name = "_rim";
 
-        for (unsigned short i = 0; i < count; ++i) {
-            Ogre::SubEntity *subentity = ActorEntity->getSubEntity(i);
+        for (unsigned short i = 0; i < visibleParts.size(); ++i) {
+            Ogre::SubEntity *subentity = ActorEntity->getSubEntity(visibleParts[i]);
 
             const Ogre::String &old_material_name = subentity->getMaterialName();
             Ogre::String new_material_name = old_material_name + rim_material_name;
@@ -260,10 +267,8 @@ namespace SpellByte {
 
         */
 
-        unsigned short count = ActorEntity->getNumSubEntities();
-
-        for (unsigned short i = 0; i < count; ++i) {
-            Ogre::SubEntity *subentity = ActorEntity->getSubEntity(i);
+        for (unsigned short i = 0; i < visibleParts.size(); ++i) {
+            Ogre::SubEntity *subentity = ActorEntity->getSubEntity(visibleParts[i]);
             Ogre::SubMesh *submesh = subentity->getSubMesh();
 
             const Ogre::String &old_material_name = submesh->getMaterialName();
@@ -303,6 +308,7 @@ namespace SpellByte {
         if (!APP->SceneMgr->hasEntity(entityName)) {
             ActorEntity = APP->SceneMgr->createEntity(entityName, "MedBaseMaleApril2013.mesh");
             ActorEntity->setQueryFlags(World::COLLISION_MASK::ACTOR);
+            //ActorEntity->setCastShadows(false);
             /*LOG("Subentities: " + Ogre::StringConverter::toString(ActorEntity->getNumSubEntities()));
             Ogre::Mesh::SubMeshNameMap::iterator it;
             Ogre::Mesh::SubMeshNameMap nameMap = ActorEntity->getMesh()->getSubMeshNameMap();
@@ -329,17 +335,16 @@ namespace SpellByte {
             Ogre::SubEntity *sEnt;
             sEnt = ActorEntity->getSubEntity(i);
             sEnt->setVisible(false);
+            //sEnt->getMaterial()->setReceiveShadows(false);
         }
     }
 
     bool Actor::handleMessage(const Telegram &msg) {
-        LOG("Actor(" + Ogre::StringConverter::toString(ID) + ") Received Message: " + msgToString(msg.Msg));
         if (dead || !Active)
             return false;
         if (msg.Msg == MessageType::PLAYER_INTERACT) {
             Ogre::Vector3 attackerPos = DereferenceToType<Ogre::Vector3>(msg.ExtraInfo);
             if (attackerPos.distance(ActorNode->getPosition()) < 5) {
-                LOG("Player fed succesfully!");
                 die();
                 Courier->DispatchMsg(SEND_MSG_IMMEDIATELY, ID, msg.Sender, MessageType::FEED_SUCCESSFUL);
             }
@@ -373,7 +378,6 @@ namespace SpellByte {
 
     void Actor::travelRandom() {
         int nodeCount = WorldPtr->getGraph()->nodeCount();
-        LOG("Traveling to random location");
         while(true) {
             int nextLocation = rand() % nodeCount;
             if (nextLocation != currentNode) {

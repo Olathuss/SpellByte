@@ -7,8 +7,8 @@
 
 namespace SpellByte {
     namespace Graph {
-        GraphLoader::GraphLoader(World *world, bool showMarkers):
-                    WorldGraph(nullptr), worldPtr(world), showNodeMarkers(showMarkers) {
+        GraphLoader::GraphLoader(World *world, bool visualMarkers):
+                    WorldGraph(nullptr), worldPtr(world), visualNodeMarkers(visualMarkers) {
             graphNode = APP->SceneMgr->getRootSceneNode()->createChildSceneNode("GRAPH_NODE");
         }
 
@@ -26,6 +26,16 @@ namespace SpellByte {
             manualObjects.clear();
         }
 
+        void GraphLoader::showVisualGraph() {
+            if (visualNodeMarkers)
+                graphNode->setVisible(true);
+        }
+
+        void GraphLoader::hideVisualGraph() {
+            if (visualNodeMarkers)
+                graphNode->setVisible(false);
+        }
+
         void GraphLoader::loadGraph(Graph *graph, tinyxml2::XMLElement *xmlGraph) {
             WorldGraph = graph;
             clearGraph();
@@ -37,13 +47,14 @@ namespace SpellByte {
                 loadPosition(nextNode, x, y, z);
                 Ogre::Vector3 nodePosition = Ogre::Vector3(x, y, z);
                 nodePosition.y = worldPtr->getHeight(x, y, z);
-                if(showNodeMarkers) {
+                if(visualNodeMarkers) {
                     Ogre::String nodeName = "GRAPH_NODE_" + Ogre::StringConverter::toString(id);
                     Ogre::Entity *entity = APP->SceneMgr->createEntity(nodeName, "marker.mesh");
                     Ogre::SceneNode *childNode = graphNode->createChildSceneNode();
                     childNode->setPosition(nodePosition);
                     LOG("Node(" + Ogre::StringConverter::toString(id) + ") Position:" +
                         Ogre::StringConverter::toString(nodePosition));
+                    entity->setQueryFlags(World::COLLISION_MASK::GRAPH_NODE);
                     childNode->attachObject(entity);
                 }
                 NavNode newNode = NavNode(id, nodePosition);
@@ -59,7 +70,7 @@ namespace SpellByte {
                 Ogre::Vector3 dPosition = WorldGraph->getNode(destNode).getPos();
                 Ogre::Real cost = oPosition.distance(dPosition);
                 Edge newEdge = Edge(originNode, destNode, cost);
-                if(showNodeMarkers) {
+                if(visualNodeMarkers) {
                     Ogre::String manualName = "EDGE_" + Ogre::StringConverter::toString(originNode) + "_" +
                                                 Ogre::StringConverter::toString(destNode);
                     Ogre::ManualObject* myManualObject =  APP->SceneMgr->createManualObject(manualName);
@@ -90,6 +101,7 @@ namespace SpellByte {
                 WorldGraph->addEdge(newEdge);
                 nextEdge = nextEdge->NextSiblingElement("edge");
             }
+            graphNode->setVisible(false);
         }
     }
 }

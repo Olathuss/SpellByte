@@ -58,7 +58,7 @@ namespace SpellByte
         delete [] bmap;
     }
 
-    World::World():graphLoader(this, false) {
+    World::World():graphLoader(this, true) {
         srand(time(NULL));
 
         dirLightColor.r = APP->getConfigFloat("directionalr");
@@ -96,18 +96,19 @@ namespace SpellByte
                                                         plane, 10000, 10000, 100, 100, true, 1, 1, 1, Ogre::Vector3::UNIT_Z);
 
         // Create lights
-        SceneMgr->setSkyBox(true, "GrimmNight");
+        SceneMgr->setSkyBox(true, APP->getConfigString("sky"), 50);
+        //SceneMgr->setSkyPlane(true, skyplane, "NightSkyPlane", 100, 45, true, 0.5, 150, 150);
         //sSceneMgr->setSkyDome(true, "CloudyGrey", 5, 4);
-        //SceneMgr->setShadowTechnique(Ogre::SHADOWTYPE_STENCIL_MODULATIVE);
+        //SceneMgr->setShadowTechnique(Ogre::SHADOWTYPE_TEXTURE_MODULATIVE);
         //SceneMgr->setShadowFarDistance(APP->getConfigFloat("shadowDistance"));
-        //SceneMgr->setShadowFarDistance(5000);
-
-        Ogre::Vector3 lightdir(0.55, -0.3, 0.75);
-        lightdir.normalise();
+        //SceneMgr->setShadowFarDistance(50);
+        Ogre::ColourValue fadeColour(0.7, 0.7, 0.7);
+        //APP->Viewport->setBackgroundColour(fadeColour);
+        SceneMgr->setFog(Ogre::FOG_LINEAR, fadeColour, 0, 40, 150);
 
         sunLight = SceneMgr->createLight("sunLight");
         sunLight->setType(Ogre::Light::LT_POINT);
-        sunLight->setPosition(Ogre::Vector3(0, 1000, 0));
+        sunLight->setPosition(Ogre::Vector3(-114, 34, 307));
         sunLight->setDiffuseColour(sunLightColor);
         sunLight->setSpecularColour(sunLightColor);
 
@@ -115,37 +116,6 @@ namespace SpellByte
         lightNode->attachObject(sunLight);
 
         SceneMgr->setAmbientLight(ambientLightColor);
-
-        waterMesh = NULL;
-        // Create water
-        /*waterMesh = new WaterMesh(MESH_NAME, PLANE_SIZE, COMPLEXITY);
-        waterEntity = SceneMgr->createEntity(ENTITY_NAME, MESH_NAME);
-        waterEntity->setMaterialName("Water0");
-        SceneNode *waterNode = SceneMgr->getRootSceneNode()->createChildSceneNode();
-        waterNode->attachObject(waterEntity);
-        waterNode->setPosition(0, 100, 0);*/
-
-        // set up spline animation of light node
-        /*Ogre::Animation *anim = SceneMgr->createAnimation("WaterLight", 20);
-        Ogre::NodeAnimationTrack *track;
-        Ogre::TransformKeyFrame *key;
-        // create a random spline for light
-        track = anim->createNodeTrack(0, lightNode);
-        key = track->createNodeKeyFrame(0);
-        for(int ff = 1; ff <= 19; ff++) {
-            key = track->createNodeKeyFrame(ff);
-            Ogre::Vector3 lpos (
-                                rand() % (int)PLANE_SIZE, // - PLANE_SIZE / 2
-                                rand() % 30 + 10,
-                                rand() % (int)PLANE_SIZE // - PLANE_SIZE / 2
-                                );
-            key->setTranslate(lpos);
-        }
-        key = track->createNodeKeyFrame(20);*/
-
-        // Create a new animation state to track this
-        //waterAnim = SceneMgr->createAnimationState("WaterLight");
-        //waterAnim->setEnabled(true);
 
         // Put in a bit of fog for the hell of it
         //mSceneMgr->setFog(FOG_EXP, ColourValue::White, 0.0002);
@@ -173,10 +143,6 @@ namespace SpellByte
     {
         APP->detachWorld();
         destroyScene();
-        if (waterMesh) {
-            delete waterMesh;
-            waterMesh = NULL;
-        }
     }
 
     bool World::init(Ogre::Camera *cam, Player *player)
@@ -194,7 +160,9 @@ namespace SpellByte
         SLB::Class< World >("SpellByte::World")
             .set("loadWorld", ( bool(World::*)(std::string) ) &World::loadWorld)
             .set("saveWorld", ( bool(World::*)(std::string) ) &World::saveWorld)
-            .set("reload", &World::reload);
+            .set("reload", &World::reload)
+            .set("showVisualGraph", &World::showVisualGraph)
+            .set("hideVisualGraph", &World::hideVisualGraph);
     }
 
     void World::saveWorld(std::string worldFile)
@@ -474,9 +442,11 @@ namespace SpellByte
 
         dirLight = SceneMgr->createLight("directionalLight");
         dirLight->setType(Ogre::Light::LT_DIRECTIONAL);
-        dirLight->setDirection(Ogre::Vector3(0, -1, 1));
+        Ogre::Vector3 lightdir(.5, -.7, .5);
+        lightdir.normalise();
+        dirLight->setDirection(lightdir);
         dirLight->setDiffuseColour(Ogre::ColourValue::White);
-        dirLight->setSpecularColour(dirLightColor);
+        //dirLight->setSpecularColour(dirLightColor);
         //dirLight->setCastShadows(true);
 
         terrainGlobals = OGRE_NEW Ogre::TerrainGlobalOptions();
@@ -513,44 +483,6 @@ namespace SpellByte
 
     bool World::update(const Ogre::FrameEvent &evt) {
         ActorMgr->update(evt);
-        // TBR
-        /* Update Water */
-        /* float fWaterFlow = FLOW_SPEED * evt.timeSinceLastFrame;
-        static float fFlowAmount = 0.0f;
-        static bool fFlowUp = true;
-        SceneNode *pWaterNode = static_cast<SceneNode*>(
-            Camera->getSceneManager()->getRootSceneNode()->getChild("WaterNode"));
-        if(pWaterNode)
-        {
-            if(fFlowUp)
-                fFlowAmount += fWaterFlow;
-            else
-                fFlowAmount -= fWaterFlow;
-
-            if(fFlowAmount >= FLOW_HEIGHT)
-                fFlowUp = false;
-            else if(fFlowAmount <= 0.0f)
-                fFlowUp = true;
-
-            pWaterNode->translate(0, (fFlowUp ? fWaterFlow : -fWaterFlow), 0);
-        }*/
-        // TBR
-
-        //goatAnimState->addTime(evt.timeSinceLastFrame);
-        //manAnimState->addTime(evt.timeSinceLastFrame);
-        /*if(manAnimState->getAnimationName() == "NPCSitDown" && manAnimState->hasEnded()) {
-            LOG("Animation OVER!!!");
-            manAnimState = SceneMgr->getEntity("male")->getAnimationState("NPCTalking");
-            manAnimState->setLoop(true);
-            manAnimState->setEnabled(true);
-        }*/
-
-        /* Update Water */
-        //waterAnim->addTime(evt.timeSinceLastFrame);
-
-        //processCircles(evt.timeSinceLastFrame);
-        //processParticles();
-        //waterMesh->updateMesh(evt.timeSinceLastFrame);
 
         if(ambientLightUp)
         {
@@ -571,7 +503,6 @@ namespace SpellByte
             sunLightColor.r += lightChangeValue;
             sunLightColor.g += lightChangeValue;
             sunLightColor.b += lightChangeValue;
-            //dirLight->setSpecularColour(sunLightColor);
             sunLight->setSpecularColour(sunLightColor);
             sunLight->setDiffuseColour(sunLightColor);
         }

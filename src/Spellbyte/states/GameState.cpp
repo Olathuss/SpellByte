@@ -31,13 +31,17 @@ namespace SpellByte {
 
         LOG("Building GUI");
         buildGUI();
+
         LOG("GUI complete");
         gameWorld.init(Camera, &player);
-        gameWorld.loadWorld(APP->getConfigString("world"));
-        player.init(SceneMgr, Camera, &gameWorld);
+
         LOG("Creating scene");
         createScene();
         LOG("Scene creation complete");
+
+        gameWorld.loadWorld(APP->getConfigString("world"));
+        player.init(SceneMgr, Camera, &gameWorld);
+
         LOG("Initializing collision tools");
         mCollisionTools = new MOC::CollisionTools(SceneMgr, &gameWorld);
         player.setCollisionHandler(mCollisionTools);
@@ -111,7 +115,7 @@ namespace SpellByte {
         gameWorld.update(evt);
 
         if(debugBox) {
-            Ogre::String debugText = "";
+            Ogre::String debugText = "None";
 
             debugText = "FPS: " +
                         Ogre::StringConverter::toString(APP->RenderWindow->getAverageFPS()) +

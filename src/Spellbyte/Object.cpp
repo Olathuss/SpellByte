@@ -254,6 +254,7 @@ namespace SpellByte {
                 }
 
                 entity->setQueryFlags(World::COLLISION_MASK::STATIC);
+                entity->setCastShadows(false);
             }
             meshElt = meshElt->NextSiblingElement("mesh");
         }

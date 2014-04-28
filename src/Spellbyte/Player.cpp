@@ -19,13 +19,12 @@ namespace SpellByte {
         playerHeight = APP->getConfigFloat("height");
         moveSpeed = APP->getConfigFloat("speed");
         collisionRadius = APP->getConfigFloat("player_radius");
-        gravity = APP->getConfigFloat("gravity");
-        jumpVelocity = APP->getConfigFloat("jump_acceleration");
         collisionMask = 0;
         COMM->registerSubscriber("player", this);
         collisionNode = NULL;
         Target = nullptr;
         BloodScreen = nullptr;
+        SleepScreen = nullptr;
         TargetedActor = -1;
     }
 
@@ -37,7 +36,8 @@ namespace SpellByte {
         SLB::Class<Player>("SpellByte::Player")
             .constructor()
             .property("speed", &Player::moveSpeed)
-            .property("height", &Player::playerHeight);
+            .property("height", &Player::playerHeight)
+            .property("collision", &Player::enabledCollision);
 
         SLB::setGlobal<Player*>(&(*LUAMANAGER->LUA), this, "player");
     }
@@ -49,7 +49,7 @@ namespace SpellByte {
 
         ActorNode = sceneMgr->getRootSceneNode()->createChildSceneNode();
         Camera->setNearClipDistance(0.1);
-        Camera->setFarClipDistance(50000);
+        Camera->setFarClipDistance(APP->getConfigFloat("draw_distance"));
 
         cameraYawNode = ActorNode->createChildSceneNode();
 
@@ -61,10 +61,11 @@ namespace SpellByte {
         ActorNode->setPosition(APP->getConfigFloat("playerstartx"), APP->getConfigFloat("playerstarty"), APP->getConfigFloat("playerstartz"));
         ActorNode->setDirection(Ogre::Vector3::UNIT_Z);
 
-        //enabledCollision = false;
+        enabledCollision = true;
         collisionMask = 0;
         collisionMask |= World::COLLISION_MASK::STATIC;
         collisionMask |= World::COLLISION_MASK::ACTOR;
+        collisionMask &= ~(World::COLLISION_MASK::GRAPH_NODE);
         //collisionNode = sceneMgr->getRootSceneNode()->createChildSceneNode("PlayCollisionNode");
         //Ogre::Entity *collideEntity = sceneMgr->createEntity("PlayerEntity", "player.mesh", "General");
         //collisionModel = newCollisionModel3D(false);
@@ -88,6 +89,19 @@ namespace SpellByte {
             BloodScreen->setAlpha(0);
             BloodScreen->setVisible(false);
             APP->ceguiContext->getRootWindow()->addChild(BloodScreen);
+        }
+
+        sleepCount = 0.0;
+        sleepUp = false;
+
+        if(!SleepScreen) {
+            SleepScreen = CEGUI::WindowManager::getSingleton().createWindow("TaharezLook/StaticImage","SleepUI");
+            SleepScreen->setPosition(CEGUI::UVector2(CEGUI::UDim(0, 0), CEGUI::UDim(0, 0)));
+            SleepScreen->setSize(CEGUI::USize(CEGUI::UDim(1, 0), CEGUI::UDim(1, 0)));
+            //BloodScreen->setProperty("Image", "SpellByteImages/Blood");
+            SleepScreen->setAlpha(0);
+            SleepScreen->setVisible(false);
+            APP->ceguiContext->getRootWindow()->addChild(SleepScreen);
         }
 
         bindToLUA();
@@ -168,6 +182,10 @@ namespace SpellByte {
     }
 
     void Player::update(const Ogre::FrameEvent &evt) {
+        if (PlayerAction & PLAYER_SLEEP) {
+            displaySleep(evt);
+            return;
+        }
         moveScale = moveSpeed * evt.timeSinceLastFrame;
         moveCamera();
         rotX = rotY = Ogre::Radian(0);
@@ -193,6 +211,15 @@ namespace SpellByte {
         if (msg.Msg == MessageType::FEED_SUCCESSFUL) {
             LOG("Feed success");
             feedSuccess();
+            return true;
+        } else if (msg.Msg == MessageType::SLEEP) {
+            enableAction(PLAYER_SLEEP);
+            SleepScreen->setVisible(true);
+            Courier->DispatchMsg(5000, SENDER_ID_IRRELEVANT, -1, MessageType::END_SLEEP);
+            return true;
+        } else if( msg.Msg == MessageType::END_SLEEP) {
+            disableAction(PLAYER_SLEEP);
+            SleepScreen->setVisible(false);
             return true;
         }
         return false;
@@ -224,6 +251,19 @@ namespace SpellByte {
         BloodScreen->invalidate();
     }
 
+    void Player::displaySleep(const Ogre::FrameEvent &evt) {
+        if (sleepCount <= 0)
+            sleepUp = true;
+        else if (sleepCount >= 1.0)
+            sleepUp = false;
+        if (sleepUp)
+            sleepCount  += 0.4 * evt.timeSinceLastFrame;
+        else
+            sleepCount -= 0.4 * evt.timeSinceLastFrame;
+        SleepScreen->setAlpha(sleepCount);
+        SleepScreen->invalidate();
+    }
+
     void Player::getTarget() {
         if (TargetedActor >= 0 || TargetedActor == -2) {
             Courier->DispatchMsg(SEND_MSG_IMMEDIATELY, -1, TargetedActor, MessageType::NOT_TARGETED);
@@ -242,6 +282,7 @@ namespace SpellByte {
         Ogre::Ray ray(oldPos, targetNode->getPosition());
         RSQ->setRay(ray);
         RSQ->setQueryMask(World::COLLISION_MASK::ACTOR);
+        RSQ->setSortByDistance(true);
         Ogre::RaySceneQueryResult &result = RSQ->execute();
         Ogre::RaySceneQueryResult::iterator itr;
         for(itr = result.begin(); itr != result.end(); itr++) {
@@ -329,10 +370,10 @@ namespace SpellByte {
     void Player::moveCamera() {
         translateVector = Ogre::Vector3::ZERO;
         bool move = false;
-        if(PlayerAction & PLAYER_UP && !enabledCollision) {
+        if((PlayerAction & PLAYER_UP) && !enabledCollision) {
             ActorNode->setPosition(ActorNode->getPosition() + Ogre::Vector3(0, moveScale, 0));
         }
-        if(PlayerAction & PLAYER_DOWN && !enabledCollision) {
+        if((PlayerAction & PLAYER_DOWN) && !enabledCollision) {
             ActorNode->setPosition(ActorNode->getPosition() - Ogre::Vector3(0, moveScale, 0));
         }
         if(PlayerAction & PLAYER_FORWARD) {

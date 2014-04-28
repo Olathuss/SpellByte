@@ -59,7 +59,8 @@ namespace SpellByte
             PLAYER_RIGHT = 1 << 3,
             PLAYER_UP = 1 << 4,
             PLAYER_DOWN = 1 << 5,
-            PLAYER_FEED = 1 << 6
+            PLAYER_FEED = 1 << 6,
+            PLAYER_SLEEP = 1 << 7
         };
 
         void enableAction(int action) {
@@ -88,11 +89,12 @@ namespace SpellByte
         Ogre::Real bloodCount;
         bool bloodUp;
         void displayBlood(const Ogre::FrameEvent &evt);
-
-        // Sad physics
-        Ogre::Real gravity;
-        Ogre::Real accelY;
-        Ogre::Real jumpVelocity;
+        CEGUI::Window *SleepScreen;
+        bool showSleep;
+        Ogre::Real sleepTime;
+        Ogre::Real sleepCount;
+        bool sleepUp;
+        void displaySleep(const Ogre::FrameEvent &evt);
 
         // For FPS controls
         Ogre::Vector3 translateVector;

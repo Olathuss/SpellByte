@@ -2,6 +2,7 @@
 <CodeBlocks_project_file>
 	<FileVersion major="1" minor="6" />
 	<Project>
+		<Option title="SpellByte" />
 		<Option title="Spellbyte" />
 		<Option pch_mode="2" />
 		<Option compiler="gcc" />
@@ -65,7 +66,7 @@
 		<Compiler>
 			<Add option="-Wall" />
 			<Add option="-fpermissive" />
-			<Add option="-DAUDIO" />
+			<Add directory="Spellbyte" />
 			<Add directory="../include" />
 			<Add directory="../include/OGRE" />
 			<Add directory="../../Spellbyte/boost" />
@@ -118,6 +119,8 @@
 		<Unit filename="Spellbyte/World.cpp" />
 		<Unit filename="Spellbyte/World.h" />
 		<Unit filename="Spellbyte/actor/BaseActor.h" />
+		<Unit filename="Spellbyte/actor/InteractableObject.cpp" />
+		<Unit filename="Spellbyte/actor/InteractableObject.h" />
 		<Unit filename="Spellbyte/actor/State.h" />
 		<Unit filename="Spellbyte/actor/StateMachine.h" />
 		<Unit filename="Spellbyte/actor/SteeringBehaviors.cpp" />
@@ -154,6 +157,18 @@
 		<Unit filename="Spellbyte/console/console_communicator.h" />
 		<Unit filename="Spellbyte/define.h" />
 		<Unit filename="Spellbyte/error_defines.h" />
+		<Unit filename="Spellbyte/graph/AStarSearch.cpp" />
+		<Unit filename="Spellbyte/graph/AStarSearch.h" />
+		<Unit filename="Spellbyte/graph/Edges.h" />
+		<Unit filename="Spellbyte/graph/Graph.cpp" />
+		<Unit filename="Spellbyte/graph/Graph.h" />
+		<Unit filename="Spellbyte/graph/GraphEdgeTypes.h" />
+		<Unit filename="Spellbyte/graph/GraphLoader.cpp" />
+		<Unit filename="Spellbyte/graph/GraphLoader.h" />
+		<Unit filename="Spellbyte/graph/GraphNodeTypes.h" />
+		<Unit filename="Spellbyte/graph/NodeTypeEnumerations.h" />
+		<Unit filename="Spellbyte/graph/Nodes.h" />
+		<Unit filename="Spellbyte/graph/SparseGraph.h" />
 		<Unit filename="Spellbyte/main.cpp" />
 		<Unit filename="Spellbyte/resources/LUAResourceFile.cpp" />
 		<Unit filename="Spellbyte/resources/LUAResourceFile.h" />
@@ -212,7 +227,7 @@
 			<lib_finder disable_auto="1" />
 			<DoxyBlocks>
 				<comment_style block="1" line="1" />
-				<doxyfile_project project_number="1.0" output_directory="docs\doxygen" />
+				<doxyfile_project project_number="0.2" output_directory="docs\doxygen" />
 				<doxyfile_build extract_all="1" />
 				<doxyfile_warnings warn_if_undocumented="1" />
 				<doxyfile_output />

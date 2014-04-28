@@ -36,7 +36,8 @@ namespace SpellByte
         enum COLLISION_MASK {
             NONE = 1 << 0,
             STATIC = 1 << 1,
-            ACTOR = 1 << 2
+            ACTOR = 1 << 2,
+            GRAPH_NODE = 1 << 3
         };
 
         World();
@@ -51,6 +52,13 @@ namespace SpellByte
         bool newWorldLoad();
         void createScene();
         void destroyScene();
+
+        void showVisualGraph() {
+            graphLoader.showVisualGraph();
+        }
+        void hideVisualGraph() {
+            graphLoader.hideVisualGraph();
+        }
 
         Graph::Graph *getGraph() {
             return &worldGraph;
@@ -116,11 +124,10 @@ namespace SpellByte
         // Bind world API to LUA
         void bindToLUA();
 
-        /* Water */
         WaterMesh *waterMesh;
         Ogre::Entity *waterEntity;
         Ogre::AnimationState* waterAnim;
-        Ogre::Overlay* waterOverlay;
+        Ogre::Overlay *waterOverlay;
         Ogre::ParticleSystem *waterParticleSystem;
         Ogre::ParticleEmitter *waterParticleEmitter;
         WaterCircles circles;

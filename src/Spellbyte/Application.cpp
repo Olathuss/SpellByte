@@ -200,10 +200,10 @@ namespace SpellByte {
         CEGUI::ImageManager::setImagesetDefaultResourceGroup("Imagesets");
 
         // Load CEGUI configurations and skin/interface
-        CEGUI::SchemeManager::getSingleton().createFromFile( "GameMenu.scheme" );
         CEGUI::SchemeManager::getSingleton().createFromFile( "TaharezLook.scheme" );
         CEGUI::SchemeManager::getSingleton().createFromFile( "VanillaSkin.scheme" );
         CEGUI::SchemeManager::getSingleton().createFromFile( "SpellByte.scheme" );
+        CEGUI::SchemeManager::getSingleton().createFromFile( "GameMenu.scheme" );
         ceguiContext = &CEGUI::System::getSingleton().getDefaultGUIContext();
         ceguiContext->getMouseCursor().setDefaultImage( "GameMenuImages/MouseCursor" );
         ceguiContext->injectMousePosition(0.0, 0.0);

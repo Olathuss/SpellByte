@@ -3,6 +3,7 @@
 #include <World.h>
 #include <utilities/Telegram.h>
 #include <utilities/Messages.h>
+#include <utilities/MessageDispatcher.h>
 
 namespace SpellByte {
     Coffin::Coffin():Interactable() {
@@ -23,14 +24,14 @@ namespace SpellByte {
             ActorEntity = APP->SceneMgr->createEntity("COFFIN", "coffin.mesh", "Objects");
             ActorEntity->setQueryFlags(World::COLLISION_MASK::ACTOR);
             ActorNode->attachObject(ActorEntity);
-            ActorNode->setPosition(-41, WorldPtr->getHeight(-41, 0, 339.8), 339.8);
-            ActorNode->yaw(Ogre::Degree(90));
+            ActorNode->setPosition(-41, WorldPtr->getHeight(-41, 0, 339.9), 339.9);
+            ActorNode->yaw(Ogre::Degree(-90));
 
         }
     }
 
     Coffin::~Coffin() {
-        // Nothing here
+        reset();
     }
 
     bool Coffin::handleMessage(const Telegram &msg) {
@@ -40,6 +41,9 @@ namespace SpellByte {
             return true;
         } else if (msg.Msg == MessageType::NOT_TARGETED) {
             disableTarget();
+            return true;
+        } else if (msg.Msg == MessageType::PLAYER_INTERACT) {
+            Courier->DispatchMsg(SEND_MSG_IMMEDIATELY, SENDER_ID_IRRELEVANT, -1, MessageType::SLEEP);
             return true;
         }
         return false;

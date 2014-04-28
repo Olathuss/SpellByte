@@ -117,7 +117,13 @@ namespace SpellByte {
             const Telegram &telegram = *PriorityQ.begin();
 
             // get recipient
-            BaseActor *receiver = ActorMgr->getActorFromID(telegram.Receiver);
+            BaseActor *receiver;
+            if (telegram.Receiver == playerID && playerID != INVALID_ACTOR_ID && player)
+                receiver = player;
+            else if (telegram.Receiver == -2) // Temporary HACK
+                receiver = APP->getWorldPtr()->getCoffinPtr();
+            else
+                receiver = ActorMgr->getActorFromID(telegram.Receiver);
 
             // send telegram
             Discharge(receiver, telegram);

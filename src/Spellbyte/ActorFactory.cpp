@@ -23,23 +23,8 @@ namespace SpellByte {
         newActor->WorldPtr = worldPtr;
 
         std::vector<Ogre::String> entParts = ActorMgr->getRandomSkin();
-        /*entParts.push_back("BaseArms");
-        entParts.push_back("BaseHands");
-        entParts.push_back("BaseHairC");
-        entParts.push_back("Head");
-        entParts.push_back("Teeth");
-        entParts.push_back("Lowerteeth");
-        entParts.push_back("ThiefHood");
-        entParts.push_back("ThiefTorso");
-        entParts.push_back("ThiefTrousers_MinerMeshExchange_");
-        entParts.push_back("MinerBoots");*/
-        //entParts.push_back("FarmerTorso");das
+        newActor->setVisibleParts(entParts);
 
-        for (unsigned int i = 0; i < entParts.size(); ++i) {
-            Ogre::SubEntity *sEnt;
-            sEnt = newActor->ActorEntity->getSubEntity(entParts[i]);
-            sEnt->setVisible(true);
-        }
         Ogre::Vector3 pos = Ogre::Vector3(0, 0, 0);
         int negativex = 1 ? rand() % 1 == 0: -1;
         int negativez = 1 ? rand() % 1 == 0: -1;

@@ -20,23 +20,20 @@ namespace SpellByte {
 
             World *worldPtr;
 
-            bool showNodeMarkers;
+            bool visualNodeMarkers;
 
             std::vector<Ogre::ManualObject*> manualObjects;
             std::vector<Ogre::String> materialNames;
 
         public:
-            GraphLoader(World* world, bool showMarkers = false);
+            GraphLoader(World* world, bool visualMarkers = false);
             ~GraphLoader();
 
-            void enableNodeMarkers() {
-                showNodeMarkers = true;
-            }
-            bool getNodeVisibility() { return showNodeMarkers; }
+            void showVisualGraph();
 
-            void disableNodeMarkers() {
-                showNodeMarkers = false;
-            };
+            void hideVisualGraph();
+
+            bool getNodeVisibility() { return visualNodeMarkers; }
 
             void loadGraph(Graph *graph, tinyxml2::XMLElement *xmlGraph);
 
